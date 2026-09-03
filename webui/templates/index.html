@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Antigravity Web UI — Vision & Multi-Account Hub</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    * {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    code, pre {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    
+    body {
+      background: radial-gradient(circle at 50% 0%, #172A45 0%, #0B132B 100%);
+      color: #E2E8F0;
+      min-height: 100vh;
+    }
+
+    .glass-panel {
+      background: rgba(16, 29, 49, 0.7);
+      backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    }
+
+    .glass-input {
+      background: rgba(11, 20, 36, 0.85);
+      border: 1px solid rgba(59, 130, 246, 0.2);
+    }
+    .glass-input:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+      outline: none;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    .chat-bubble-user {
+      background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .chat-bubble-ai {
+      background: rgba(15, 27, 45, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    /* Markdown Styling */
+    .prose pre {
+      background: #0d1522 !important;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 0.5rem;
+      padding: 1rem;
+      margin: 0.75rem 0;
+      overflow-x: auto;
+    }
+    .prose code {
+      color: #38BDF8;
+      font-size: 0.875rem;
+    }
+    .prose p {
+      margin-bottom: 0.75rem;
+      line-height: 1.65;
+    }
+    .prose ul, .prose ol {
+      margin-left: 1.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .prose li {
+      margin-bottom: 0.25rem;
+    }
+
+    .drag-active {
+      border: 2px dashed #3B82F6 !important;
+      background: rgba(59, 130, 246, 0.1) !important;
+    }
+  </style>
+</head>
+<body class="flex flex-col h-screen overflow-hidden">
+
+  <!-- Header -->
+  <header class="glass-panel z-20 px-6 py-3.5 flex items-center justify-between border-b border-slate-800/80">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+        <i class="fa-solid fa-atom text-white text-xl"></i>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-bold text-lg text-white tracking-wide">Antigravity Web UI</h1>
+          <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">Vision & Fallback</span>
+        </div>
+        <p class="text-xs text-slate-400">Google Agentic AI • Multi-Account Resilience Hub</p>
+      </div>
+    </div>
+
+    <!-- Controls / Status -->
+    <div class="flex items-center gap-3">
+      <!-- Google Account Selector -->
+      <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
+        <i class="fa-brands fa-google text-emerald-400 text-sm"></i>
+        <span class="text-xs text-slate-400 font-medium">Akun:</span>
+        <select id="accountSelect" onchange="switchAccount(this.value)" class="bg-transparent text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer">
+          <option value="" disabled selected>Memuat akun...</option>
+        </select>
+        <button onclick="openAddAccountModal()" title="Tambah Akun Google Baru" class="text-slate-400 hover:text-white text-xs pl-1">
+          <i class="fa-solid fa-plus-circle"></i>
+        </button>
+      </div>
+
+      <!-- Model Selector -->
+      <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
+        <i class="fa-solid fa-microchip text-blue-400 text-sm"></i>
+        <select id="modelSelect" class="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer">
+          <option value="gemini-3.8-flash-high" selected>Gemini 3.8 Flash (High)</option>
+          <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+          <option value="gemini-3.7-flash-high">Gemini 3.7 Flash (High)</option>
+          <option value="gemini-3.1-pro-high">Gemini 3.1 Pro (High)</option>
+          <option value="gpt-oss-120b-medium">GPT-OSS 120B</option>
+        </select>
+      </div>
+
+      <!-- Clear Chat -->
+      <button onclick="clearChat()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium transition flex items-center gap-1.5 border border-slate-700">
+        <i class="fa-solid fa-rotate-right"></i>
+        <span>Reset Sesi</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Workspace Sub-bar -->
+  <div class="bg-slate-950/60 px-6 py-2 border-b border-slate-800/40 flex items-center justify-between text-xs text-slate-400">
+    <div class="flex items-center gap-2 w-2/3">
+      <i class="fa-solid fa-folder-open text-amber-400"></i>
+      <span>Working Dir:</span>
+      <input type="text" id="cwdInput" value="C:\Users\PRIMA" class="bg-slate-900/80 border border-slate-800 rounded px-2 py-0.5 text-xs text-slate-200 w-full focus:outline-none focus:border-blue-500">
+    </div>
+    <div class="flex items-center gap-3">
+      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
+        <input type="checkbox" id="continueToggle" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
+        <span>Sambung Riwayat Sesi (-c)</span>
+      </label>
+      <span class="text-slate-600">|</span>
+      <span id="systemStatus" class="flex items-center gap-1 text-emerald-400 font-medium">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        Ready
+      </span>
+    </div>
+  </div>
+
+  <!-- Chat Content Feed -->
+  <main id="chatFeed" class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar space-y-6">
+    <!-- Welcome Message -->
+    <div class="chat-bubble-ai max-w-3xl mx-auto p-5 rounded-2xl shadow-xl">
+      <div class="flex items-start gap-3.5">
+        <div class="w-8 h-8 rounded-lg bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
+          <i class="fa-solid fa-robot text-sm"></i>
+        </div>
+        <div class="prose prose-invert text-sm flex-1 leading-relaxed">
+          <h3 class="text-base font-semibold text-white mb-2 flex items-center gap-2">
+            <span>Selamat datang di Antigravity Web UI</span>
+            <span class="text-xs font-normal text-slate-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">Vision Ready</span>
+          </h3>
+          <p>Kini Anda dapat berinteraksi dengan Agent Antigravity dengan fleksibilitas penuh:</p>
+          <ul>
+            <li><strong>🖼️ Lampiran Gambar / Screenshot:</strong> Cukup tekan <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs">Ctrl + V</kbd> setelah screenshot (<kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs">Win + Shift + S</kbd>) atau drag-and-drop gambar langsung ke kotak chat.</li>
+            <li><strong>🔄 Auto-Fallback Google Account:</strong> Jika kuota akun aktif habis, sistem otomatis beralih ke akun Google cadangan dan menyambung pekerjaan tanpa jeda.</li>
+            <li><strong>⚡ Terminal / CLI Power:</strong> Semua tools pengeditan kode, eksekusi shell, dan eksplorasi file tetap aktif 100%.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Drag Overlay -->
+  <div id="dragOverlay" class="fixed inset-0 bg-blue-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center border-4 border-dashed border-blue-400 hidden pointer-events-none">
+    <i class="fa-solid fa-cloud-arrow-up text-6xl text-blue-300 animate-bounce mb-4"></i>
+    <h2 class="text-2xl font-bold text-white">Lepaskan Foto / Gambar di Sini</h2>
+    <p class="text-blue-200 text-sm mt-1">Gambar akan langsung dilampirkan ke prompt Antigravity</p>
+  </div>
+
+  <!-- Bottom Input Bar -->
+  <footer class="glass-panel p-4 z-20 border-t border-slate-800/80">
+    <div class="max-w-4xl mx-auto space-y-2">
+      
+      <!-- Attachment Previews Strip -->
+      <div id="attachmentStrip" class="flex flex-wrap gap-2 empty:hidden"></div>
+
+      <!-- Input Box -->
+      <div class="glass-input rounded-2xl p-2.5 flex items-end gap-2 shadow-2xl transition">
+        <!-- Attach File Button -->
+        <button onclick="document.getElementById('fileInput').click()" title="Lampirkan Gambar/Foto" class="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800/50 rounded-xl transition shrink-0">
+          <i class="fa-solid fa-image text-lg"></i>
+        </button>
+        <input type="file" id="fileInput" multiple accept="image/*,.pdf" class="hidden" onchange="handleFileSelect(this.files)">
+
+        <!-- Textarea -->
+        <textarea id="promptInput" rows="1" placeholder="Tulis instruksi atau paste gambar (Ctrl+V) / drag foto ke sini..." 
+          class="flex-1 bg-transparent text-sm text-slate-100 placeholder-slate-500 resize-none max-h-48 custom-scrollbar py-2 focus:outline-none leading-relaxed"
+          oninput="autoResizeTextarea(this)" onkeydown="handleKeyDown(event)"></textarea>
+
+        <!-- Send / Stop Button -->
+        <div class="flex items-center gap-1.5 shrink-0">
+          <button id="stopBtn" onclick="stopGeneration()" class="p-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl transition hidden shadow-lg shadow-rose-600/30" title="Hentikan Proses">
+            <i class="fa-solid fa-stop text-sm"></i>
+          </button>
+          <button id="sendBtn" onclick="sendPrompt()" class="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition shadow-lg shadow-blue-600/30 font-medium" title="Kirim (Enter)">
+            <i class="fa-solid fa-paper-plane text-sm"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Helper Hint -->
+      <div class="flex items-center justify-between text-[11px] text-slate-500 px-2">
+        <div class="flex items-center gap-3">
+          <span><kbd class="px-1 py-0.5 bg-slate-900 border border-slate-800 rounded">Enter</kbd> Kirim</span>
+          <span><kbd class="px-1 py-0.5 bg-slate-900 border border-slate-800 rounded">Shift + Enter</kbd> Baris baru</span>
+          <span><kbd class="px-1 py-0.5 bg-slate-900 border border-slate-800 rounded">Ctrl + V</kbd> Paste Screenshot</span>
+        </div>
+        <div class="flex items-center gap-1 text-slate-400">
+          <i class="fa-solid fa-shield-halved text-emerald-400"></i>
+          <span>Auto-Fallback Quota Active</span>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal Tambah Akun -->
+  <div id="addAccountModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="glass-panel p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl border border-slate-700 space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-base font-bold text-white flex items-center gap-2">
+          <i class="fa-brands fa-google text-emerald-400"></i>
+          <span>Tambah Akun Google Baru</span>
+        </h3>
+        <button onclick="closeAddAccountModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Sistem akan membuka jendela login Google di browser Anda. Akun baru ini akan otomatis disimpan sebagai profil cadangan untuk rotasi kuota.
+      </p>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Profil Akun:</label>
+        <input type="text" id="newAccountName" placeholder="Contoh: akun2, kantor, proyek" class="w-full glass-input rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeAddAccountModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs">Batal</button>
+        <button onclick="submitNewAccount()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-600/30">
+          <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          <span>Buka Login Google</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let attachedImages = [];
+    let isGenerating = false;
+    let abortController = null;
+
+    // Inisialisasi marked options
+    marked.setOptions({
+      highlight: function(code, lang) {
+        if (lang && hljs.getLanguage(lang)) {
+          return hljs.highlight(code, { language: lang }).value;
+        }
+        return hljs.highlightAuto(code).value;
+      },
+      breaks: true
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchAccounts();
+      setupClipboardAndDragDrop();
+    });
+
+    function autoResizeTextarea(el) {
+      el.style.height = 'auto';
+      el.style.height = Math.min(el.scrollHeight, 192) + 'px';
+    }
+
+    function handleKeyDown(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendPrompt();
+      }
+    }
+
+    // Ambil daftar akun
+    async function fetchAccounts() {
+      try {
+        const res = await fetch('/api/accounts');
+        const data = await res.json();
+        if (data.success) {
+          const select = document.getElementById('accountSelect');
+          select.innerHTML = '';
+          data.accounts.forEach(acc => {
+            const opt = document.createElement('option');
+            opt.value = acc.name;
+            opt.textContent = acc.name + (acc.active ? ' (Aktif)' : '');
+            if (acc.active) opt.selected = true;
+            select.appendChild(opt);
+          });
+        }
+      } catch (err) {
+        console.error('Gagal memuat akun:', err);
+      }
+    }
+
+    async function switchAccount(name) {
+      try {
+        const res = await fetch('/api/accounts/switch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        const data = await res.json();
+        if (data.success) {
+          fetchAccounts();
+        }
+      } catch (err) {
+        alert('Gagal berganti akun: ' + err.message);
+      }
+    }
+
+    function openAddAccountModal() {
+      document.getElementById('addAccountModal').classList.remove('hidden');
+    }
+    function closeAddAccountModal() {
+      document.getElementById('addAccountModal').classList.add('hidden');
+    }
+
+    async function submitNewAccount() {
+      const name = document.getElementById('newAccountName').value.trim() || 'akun_' + Date.now();
+      closeAddAccountModal();
+      try {
+        await fetch('/api/accounts/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name })
+        });
+        alert('Jendela login browser telah dibuka. Silakan login ke akun Google kedua Anda. Setelah selesai, akun akan otomatis terdaftar.');
+        setTimeout(fetchAccounts, 5000);
+      } catch (err) {
+        alert('Gagal memulai login akun: ' + err.message);
+      }
+    }
+
+    // Setup Clipboard Paste & Drag-Drop
+    function setupClipboardAndDragDrop() {
+      // Paste listener
+      window.addEventListener('paste', async (e) => {
+        const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+        for (let item of items) {
+          if (item.type.indexOf('image') !== -1) {
+            const blob = item.getAsFile();
+            uploadImageBlob(blob);
+          }
+        }
+      });
+
+      // Drag & drop
+      const overlay = document.getElementById('dragOverlay');
+      let dragCounter = 0;
+
+      window.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        overlay.classList.remove('hidden');
+      });
+      window.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter <= 0) {
+          overlay.classList.add('hidden');
+          dragCounter = 0;
+        }
+      });
+      window.addEventListener('dragover', (e) => e.preventDefault());
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragCounter = 0;
+        overlay.classList.add('hidden');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleFileSelect(e.dataTransfer.files);
+        }
+      });
+    }
+
+    async function handleFileSelect(files) {
+      for (let f of files) {
+        if (f.type.startsWith('image/')) {
+          uploadImageBlob(f);
+        }
+      }
+    }
+
+    async function uploadImageBlob(blob) {
+      const formData = new FormData();
+      formData.append('files', blob, 'screenshot.png');
+
+      try {
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+        if (data.success && data.files.length > 0) {
+          data.files.forEach(f => {
+            attachedImages.push(f);
+            renderAttachmentPill(f);
+          });
+        }
+      } catch (err) {
+        alert('Gagal mengunggah gambar: ' + err.message);
+      }
+    }
+
+    function renderAttachmentPill(fileObj) {
+      const strip = document.getElementById('attachmentStrip');
+      const div = document.createElement('div');
+      div.className = 'flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 shadow-md animate-fade-in';
+      div.innerHTML = `
+        <img src="${fileObj.url}" class="w-7 h-7 object-cover rounded-lg border border-slate-700">
+        <span class="max-w-[150px] truncate font-mono text-[11px]">${fileObj.fileName}</span>
+        <button onclick="removeAttachment('${fileObj.savedName}', this)" class="text-slate-400 hover:text-rose-400 ml-1">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      `;
+      strip.appendChild(div);
+    }
+
+    function removeAttachment(savedName, btnEl) {
+      attachedImages = attachedImages.filter(img => img.savedName !== savedName);
+      btnEl.parentElement.remove();
+    }
+
+    // Kirim Prompt & Chat
+    async function sendPrompt() {
+      if (isGenerating) return;
+      const promptInput = document.getElementById('promptInput');
+      const prompt = promptInput.value.trim();
+      if (!prompt && attachedImages.length === 0) return;
+
+      const model = document.getElementById('modelSelect').value;
+      const cwd = document.getElementById('cwdInput').value.trim();
+      const continueSession = document.getElementById('continueToggle').checked;
+      const imagesToSend = attachedImages.map(img => img.absolutePath);
+
+      // Render User Message ke Chat Feed
+      appendUserMessage(prompt, attachedImages);
+
+      // Clear input & attachments
+      promptInput.value = '';
+      promptInput.style.height = 'auto';
+      attachedImages = [];
+      document.getElementById('attachmentStrip').innerHTML = '';
+
+      // Tampilkan AI Bubble placeholder
+      const aiBubble = appendAiMessage();
+
+      // UI state
+      isGenerating = true;
+      document.getElementById('sendBtn').classList.add('hidden');
+      document.getElementById('stopBtn').classList.remove('hidden');
+      document.getElementById('systemStatus').innerHTML = `
+        <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
+        Processing...
+      `;
+
+      try {
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            prompt,
+            model,
+            cwd,
+            continueSession,
+            images: imagesToSend
+          })
+        });
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder('utf-8');
+        let fullContent = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+
+          for (let line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.substring(6));
+                if (data.type === 'chunk') {
+                  fullContent += data.text;
+                  aiBubble.contentEl.innerHTML = marked.parse(fullContent);
+                  hljs.highlightAll();
+                  scrollToBottom();
+                } else if (data.type === 'fallback') {
+                  aiBubble.statusEl.innerHTML += `
+                    <div class="my-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2">
+                      <i class="fa-solid fa-arrows-rotate animate-spin"></i>
+                      <span>${data.message}</span>
+                    </div>
+                  `;
+                  fetchAccounts();
+                  scrollToBottom();
+                } else if (data.type === 'error') {
+                  aiBubble.contentEl.innerHTML += `<div class="text-rose-400 font-semibold mt-2">${data.message}</div>`;
+                }
+              } catch (e) {}
+            }
+          }
+        }
+      } catch (err) {
+        aiBubble.contentEl.innerHTML += `<div class="text-rose-400 font-semibold mt-2">Error: ${err.message}</div>`;
+      } finally {
+        isGenerating = false;
+        document.getElementById('sendBtn').classList.remove('hidden');
+        document.getElementById('stopBtn').classList.add('hidden');
+        document.getElementById('systemStatus').innerHTML = `
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          Ready
+        `;
+        fetchAccounts();
+      }
+    }
+
+    async function stopGeneration() {
+      try {
+        await fetch('/api/stop', { method: 'POST' });
+      } catch (err) {}
+    }
+
+    function appendUserMessage(text, images) {
+      const feed = document.getElementById('chatFeed');
+      const div = document.createElement('div');
+      div.className = 'max-w-3xl ml-auto flex justify-end gap-3';
+      
+      let imagesHtml = '';
+      if (images && images.length > 0) {
+        imagesHtml = `<div class="flex flex-wrap gap-2 mb-2">` + 
+          images.map(img => `<img src="${img.url}" class="max-h-48 rounded-lg border border-white/20 object-cover shadow">`).join('') +
+          `</div>`;
+      }
+
+      div.innerHTML = `
+        <div class="chat-bubble-user p-4 rounded-2xl rounded-tr-sm text-sm text-white shadow-xl max-w-[85%] leading-relaxed">
+          ${imagesHtml}
+          <div>${text ? text.replace(/\n/g, '<br>') : ''}</div>
+        </div>
+      `;
+      feed.appendChild(div);
+      scrollToBottom();
+    }
+
+    function appendAiMessage() {
+      const feed = document.getElementById('chatFeed');
+      const div = document.createElement('div');
+      div.className = 'chat-bubble-ai max-w-3xl mx-auto p-5 rounded-2xl shadow-xl w-full';
+
+      div.innerHTML = `
+        <div class="flex items-start gap-3.5">
+          <div class="w-8 h-8 rounded-lg bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
+            <i class="fa-solid fa-robot text-sm"></i>
+          </div>
+          <div class="flex-1 overflow-hidden">
+            <div class="status-container"></div>
+            <div class="prose prose-invert text-sm content-container leading-relaxed">
+              <span class="inline-block w-2 h-4 bg-blue-400 animate-pulse"></span>
+            </div>
+          </div>
+        </div>
+      `;
+      feed.appendChild(div);
+      scrollToBottom();
+
+      return {
+        element: div,
+        statusEl: div.querySelector('.status-container'),
+        contentEl: div.querySelector('.content-container')
+      };
+    }
+
+    function clearChat() {
+      if (confirm('Mulai sesi baru? Riwayat chat di layar akan dibersihkan.')) {
+        document.getElementById('chatFeed').innerHTML = '';
+      }
+    }
+
+    function scrollToBottom() {
+      const feed = document.getElementById('chatFeed');
+      feed.scrollTop = feed.scrollHeight;
+    }
+  </script>
+</body>
+</html>

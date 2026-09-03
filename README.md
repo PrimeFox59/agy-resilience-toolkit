@@ -58,13 +58,19 @@ graph TD
 
 ## 🌟 Key Capabilities
 
-### 1. Multi-Account Google Auto-Fallback (`account_manager`)
+### 1. Web UI Alternative with Image Vision & Screenshot Paste (`webui`)
+- **Drag-and-Drop & Clipboard Paste (`Ctrl + V`):** Easily attach UI mockups, screenshots (`Win + Shift + S`), or bug images directly to your AGY prompts.
+- **Modern Glassmorphism UI:** Responsive, executive dark interface featuring real-time SSE streaming, Markdown parsing, and syntax-highlighted code blocks with 1-click copy.
+- **Built-in Account Switcher & Model Selector:** Change Google accounts or AI models directly from the browser navbar.
+- **1-Click Launchers:** Launch via `agya web` or the desktop shortcut icon.
+
+### 2. Multi-Account Google Auto-Fallback (`account_manager`)
 - **Native Windows DPAPI Keyring Swapping:** Directly interacts with `Advapi32.dll` via `ctypes` to read and swap the `gemini:antigravity` credential in `< 10ms` without restarting the OS or re-authenticating.
 - **Unlimited Account Rotation:** Register 2, 5, 10+ Google accounts (`agy-account add <name>`).
 - **Round-Robin Cascading:** When Account 1 is exhausted, it automatically promotes Account 2 and continues the conversation (`agy -c`).
 - **Zero Token Loss:** Working directories, file changes, and conversation IDs are fully preserved.
 
-### 2. Hermes Tri-Node Persistent Memory Sync (`memory_sync`)
+### 3. Hermes Tri-Node Persistent Memory Sync (`memory_sync`)
 - **Durable Memory Architecture:** Modeled after Hermes Agent (Nous Research), separating User Persona (`USER.md`), Project Conventions (`MEMORY.md`), and System Policy (`AGENTS.md`).
 - **Tri-Node Mirroring:** Real-time synchronization between Local PC (**MC18**), Dev Server (**DEV20**), and Cloud Production Server (**VPS**).
 - **Autonomous Learning Loop:** The agent autonomously appends newly discovered solutions, credentials, or architectural patterns to `MEMORY.md`.
@@ -80,10 +86,15 @@ graph TD
 
 ```text
 agy-resilience-toolkit/
+├── webui/                     # Antigravity Web UI (Vision & Multi-Account Hub)
+│   ├── server.py              # Flask SSE Streaming Server
+│   ├── templates/index.html   # Glassmorphism Frontend (Drag & Drop, Ctrl+V)
+│   └── uploads/               # Local cache for attached images/screenshots
 ├── account_manager/
 │   ├── agy_account.py         # Core Python DPAPI Credential Swapper
 │   ├── agy-account.cmd        # Windows CMD/Batch wrapper
-│   └── agya.cmd               # Fast alias command for daily usage
+│   ├── agya.cmd               # Fast alias command for daily usage
+│   └── agya-web.cmd           # Web UI launcher
 ├── fallback_runners/
 │   ├── agy-fallback.ps1       # PowerShell Model Fallback runner
 │   ├── agy-fallback.cmd       # Windows wrapper for model fallback
