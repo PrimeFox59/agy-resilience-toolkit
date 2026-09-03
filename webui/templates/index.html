@@ -346,6 +346,50 @@
         <button onclick="submitNewAccount()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-600/30">
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
           <span>Buka Login Google</span>
+  <!-- Modal Ganti Judul Percakapan -->
+  <div id="renameModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-dark-900 border border-slate-700 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-pen text-brand-400"></i>
+          <span>Ganti Judul Percakapan</span>
+        </h3>
+        <button onclick="closeRenameModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-300 mb-1">Judul Baru:</label>
+        <input type="text" id="renameInput" placeholder="Masukkan judul..." class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500" onkeydown="if(event.key==='Enter') submitRename()">
+        <input type="hidden" id="renameCid">
+      </div>
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeRenameModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs">Batal</button>
+        <button onclick="submitRename()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-600/30">
+          <i class="fa-solid fa-check"></i>
+          <span>Simpan Judul</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Hapus Percakapan -->
+  <div id="deleteModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-dark-900 border border-rose-900/50 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="text-sm font-bold text-rose-400 flex items-center gap-2">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <span>Hapus Sesi Percakapan</span>
+        </h3>
+        <button onclick="closeDeleteModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed">
+        Apakah Anda yakin ingin menghapus sesi <span id="deleteSessionTitle" class="font-semibold text-white"></span> dari riwayat? Tindakan ini tidak dapat dibatalkan.
+      </p>
+      <input type="hidden" id="deleteCid">
+      <div class="flex justify-end gap-2 pt-2">
+        <button onclick="closeDeleteModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs">Batal</button>
+        <button onclick="submitDelete()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-rose-600/30">
+          <i class="fa-solid fa-trash"></i>
+          <span>Hapus Sesi</span>
         </button>
       </div>
     </div>
@@ -442,10 +486,18 @@
         groups[grp].push(c);
       });
 
-      for (const [groupName, convs] of Object.entries(groups)) {
+      // Pastikan grup '📌 Tersemat' selalu berada di paling atas
+      const groupNames = Object.keys(groups).sort((a, b) => {
+        if (a === '📌 Tersemat') return -1;
+        if (b === '📌 Tersemat') return 1;
+        return 0;
+      });
+
+      for (const groupName of groupNames) {
+        const convs = groups[groupName];
         const groupHeader = document.createElement('div');
-        groupHeader.className = 'text-[10px] font-bold tracking-wider text-slate-500 uppercase px-2 pt-1 mb-1';
-        groupHeader.textContent = groupName;
+        groupHeader.className = 'text-[10px] font-bold tracking-wider text-slate-500 uppercase px-2 pt-1 mb-1 flex items-center justify-between';
+        groupHeader.innerHTML = `<span>${groupName}</span><span class="text-[9px] font-normal text-slate-600">${convs.length}</span>`;
         feed.appendChild(groupHeader);
 
         convs.forEach(c => {
@@ -458,12 +510,37 @@
           }`;
           item.onclick = () => selectConversation(c.id);
 
+          const iconHtml = c.isPinned 
+            ? `<i class="fa-solid fa-thumbtack text-xs mt-1 text-amber-400 rotate-[-20deg]"></i>`
+            : `<i class="fa-regular fa-message text-xs mt-1 ${isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-400'}"></i>`;
+
           item.innerHTML = `
-            <i class="fa-regular fa-message text-xs mt-1 ${isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-400'}"></i>
+            ${iconHtml}
             <div class="flex-1 min-w-0">
               <div class="flex items-center justify-between gap-1">
                 <span class="font-semibold truncate text-xs ${isActive ? 'text-white' : 'text-slate-200'}">${escapeHtml(c.title)}</span>
-                <span class="text-[10px] text-slate-500 shrink-0">${c.timeLabel || ''}</span>
+                
+                <!-- Action Buttons & Time Badge -->
+                <div class="flex items-center gap-1 shrink-0">
+                  <div class="opacity-0 group-hover:opacity-100 flex items-center gap-0.5 transition">
+                    <button onclick="event.stopPropagation(); togglePin('${c.id}', ${!c.isPinned})" 
+                            title="${c.isPinned ? 'Lepas Sematan' : 'Sematkan di Atas'}" 
+                            class="p-1 hover:text-amber-300 text-slate-400 rounded hover:bg-slate-700/60 transition">
+                      <i class="fa-solid fa-thumbtack text-[10px] ${c.isPinned ? 'text-amber-400' : ''}"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); promptRename('${c.id}', '${escapeJs(c.title)}')" 
+                            title="Ganti Judul" 
+                            class="p-1 hover:text-blue-300 text-slate-400 rounded hover:bg-slate-700/60 transition">
+                      <i class="fa-solid fa-pen text-[10px]"></i>
+                    </button>
+                    <button onclick="event.stopPropagation(); confirmDelete('${c.id}', '${escapeJs(c.title)}')" 
+                            title="Hapus Sesi" 
+                            class="p-1 hover:text-rose-400 text-slate-400 rounded hover:bg-slate-700/60 transition">
+                      <i class="fa-solid fa-trash text-[10px]"></i>
+                    </button>
+                  </div>
+                  <span class="text-[10px] text-slate-500 group-hover:hidden">${c.timeLabel || ''}</span>
+                </div>
               </div>
               <p class="text-[11px] text-slate-400 truncate mt-0.5">${escapeHtml(c.preview || 'Sesi percakapan')}</p>
             </div>
@@ -542,6 +619,87 @@
         </div>
       `;
       document.getElementById('promptInput').focus();
+    }
+
+    // ==================== CONVERSATION ACTIONS: PIN, RENAME, DELETE ====================
+    function escapeJs(str) {
+      if (!str) return '';
+      return str.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    async function togglePin(cid, newStatus) {
+      try {
+        const res = await fetch(`/api/conversations/${cid}/pin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pinned: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          fetchConversations();
+        }
+      } catch (err) {
+        alert('Gagal mengubah pin: ' + err.message);
+      }
+    }
+
+    function promptRename(cid, currentTitle) {
+      document.getElementById('renameCid').value = cid;
+      document.getElementById('renameInput').value = currentTitle || '';
+      document.getElementById('renameModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('renameInput').focus(), 100);
+    }
+    function closeRenameModal() {
+      document.getElementById('renameModal').classList.add('hidden');
+    }
+    async function submitRename() {
+      const cid = document.getElementById('renameCid').value;
+      const newTitle = document.getElementById('renameInput').value.trim();
+      if (!newTitle) return;
+      closeRenameModal();
+      try {
+        const res = await fetch(`/api/conversations/${cid}/rename`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: newTitle })
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (currentConversationId === cid) {
+            document.getElementById('activeSessionTitle').textContent = newTitle;
+          }
+          fetchConversations();
+        }
+      } catch (err) {
+        alert('Gagal mengganti nama: ' + err.message);
+      }
+    }
+
+    function confirmDelete(cid, title) {
+      document.getElementById('deleteCid').value = cid;
+      document.getElementById('deleteSessionTitle').textContent = `"${title}"`;
+      document.getElementById('deleteModal').classList.remove('hidden');
+    }
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').classList.add('hidden');
+    }
+    async function submitDelete() {
+      const cid = document.getElementById('deleteCid').value;
+      closeDeleteModal();
+      try {
+        const res = await fetch(`/api/conversations/${cid}/delete`, {
+          method: 'POST'
+        });
+        const data = await res.json();
+        if (data.success) {
+          if (currentConversationId === cid) {
+            startNewSession();
+          }
+          fetchConversations();
+        }
+      } catch (err) {
+        alert('Gagal menghapus percakapan: ' + err.message);
+      }
     }
 
     // ==================== ACCOUNTS ENGINE ====================

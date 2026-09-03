@@ -160,20 +160,38 @@ def sync_brain_conversations(conn):
     except Exception as e:
         print(f"Sync brain error: {e}")
 
+def init_meta_table(conn):
+    """Inisialisasi tabel metadata lokal web (pin, custom title, delete)."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS web_conversation_meta (
+            conversation_id TEXT PRIMARY KEY,
+            is_pinned INTEGER DEFAULT 0,
+            custom_title TEXT,
+            is_deleted INTEGER DEFAULT 0
+        )
+    """)
+    conn.commit()
+
 @app.route('/api/conversations', methods=['GET'])
 def get_conversations():
-    """Mengambil daftar riwayat percakapan dari AGY CLI SQLite database."""
+    """Mengambil daftar riwayat percakapan dari AGY CLI SQLite database dengan status pin dan judul kustom."""
     conn = get_db_connection()
     if not conn:
         return jsonify({'success': True, 'conversations': []})
     
     try:
+        init_meta_table(conn)
         sync_brain_conversations(conn)
         cur = conn.cursor()
         query = """
-            SELECT conversation_id, title, preview, step_count, last_modified_time, workspace_uris, project_id 
-            FROM conversation_summaries 
-            ORDER BY last_modified_time DESC 
+            SELECT cs.conversation_id, 
+                   COALESCE(m.custom_title, NULLIF(cs.title, ''), cs.preview, 'Percakapan Tanpa Judul') AS effective_title,
+                   cs.preview, cs.step_count, cs.last_modified_time, cs.workspace_uris,
+                   COALESCE(m.is_pinned, 0) AS is_pinned
+            FROM conversation_summaries cs
+            LEFT JOIN web_conversation_meta m ON cs.conversation_id = m.conversation_id
+            WHERE COALESCE(m.is_deleted, 0) = 0
+            ORDER BY is_pinned DESC, cs.last_modified_time DESC 
             LIMIT 150
         """
         rows = cur.execute(query).fetchall()
@@ -181,8 +199,11 @@ def get_conversations():
         conversations = []
         for r in rows:
             cid = r['conversation_id']
-            title = r['title'] or r['preview'] or "Percakapan Tanpa Judul"
+            title = r['effective_title']
+            is_pinned = bool(r['is_pinned'])
             time_label, group_label = format_relative_time(r['last_modified_time'])
+            if is_pinned:
+                group_label = "📌 Tersemat"
             
             conversations.append({
                 'id': cid,
@@ -192,11 +213,88 @@ def get_conversations():
                 'lastModified': r['last_modified_time'],
                 'timeLabel': time_label,
                 'groupLabel': group_label,
+                'isPinned': is_pinned,
                 'workspace': r['workspace_uris'] or ''
             })
             
         conn.close()
         return jsonify({'success': True, 'conversations': conversations})
+    except Exception as e:
+        if conn: conn.close()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/conversations/<cid>/rename', methods=['POST'])
+def rename_conversation(cid):
+    """Mengganti nama/judul percakapan."""
+    data = request.get_json() or {}
+    new_title = data.get('title', '').strip()
+    if not new_title:
+        return jsonify({'success': False, 'error': 'Judul baru tidak boleh kosong'}), 400
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database tidak ditemukan'}), 500
+    
+    try:
+        init_meta_table(conn)
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO web_conversation_meta (conversation_id, custom_title)
+            VALUES (?, ?)
+            ON CONFLICT(conversation_id) DO UPDATE SET custom_title = excluded.custom_title
+        """, (cid, new_title))
+        cur.execute("UPDATE conversation_summaries SET title = ? WHERE conversation_id = ?", (new_title, cid))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'conversationId': cid, 'newTitle': new_title})
+    except Exception as e:
+        if conn: conn.close()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/conversations/<cid>/pin', methods=['POST'])
+def pin_conversation(cid):
+    """Menyematkan (pin) atau melepas pin percakapan di sidebar."""
+    data = request.get_json() or {}
+    pinned = 1 if data.get('pinned', True) else 0
+    
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database tidak ditemukan'}), 500
+    
+    try:
+        init_meta_table(conn)
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO web_conversation_meta (conversation_id, is_pinned)
+            VALUES (?, ?)
+            ON CONFLICT(conversation_id) DO UPDATE SET is_pinned = excluded.is_pinned
+        """, (cid, pinned))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'conversationId': cid, 'pinned': bool(pinned)})
+    except Exception as e:
+        if conn: conn.close()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/conversations/<cid>/delete', methods=['POST'])
+def delete_conversation(cid):
+    """Menghapus percakapan dari daftar riwayat."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': False, 'error': 'Database tidak ditemukan'}), 500
+    
+    try:
+        init_meta_table(conn)
+        cur = conn.cursor()
+        cur.execute("""
+            INSERT INTO web_conversation_meta (conversation_id, is_deleted)
+            VALUES (?, 1)
+            ON CONFLICT(conversation_id) DO UPDATE SET is_deleted = 1
+        """, (cid,))
+        cur.execute("DELETE FROM conversation_summaries WHERE conversation_id = ?", (cid,))
+        conn.commit()
+        conn.close()
+        return jsonify({'success': True, 'conversationId': cid, 'message': 'Percakapan berhasil dihapus'})
     except Exception as e:
         if conn: conn.close()
         return jsonify({'success': False, 'error': str(e)}), 500
