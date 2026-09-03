@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 """
 Antigravity Web UI Server
-Antarmuka Web Modern untuk Google Antigravity CLI (AGY) dengan dukungan:
-- Lampiran Gambar / Foto (Drag-and-Drop & Clipboard Paste Ctrl+V)
-- Multi-Account Google Switching & Auto-Fallback Kuota
-- Real-time Streaming Output (Server-Sent Events)
-- Markdown & Code Highlighting
+Modern Executive Web UI for Google Antigravity CLI (AGY):
+- Sidebar with full conversation history imported directly from AGY CLI sessions
+- Multimodal Image & Screenshot Attachment (Paste Ctrl+V & Drag-Drop)
+- Multi-Account Google Credential Swapping & Auto-Fallback Quota
+- Real-time Server-Sent Events (SSE) Streaming
+- Markdown & Code Syntax Highlighting with 1-Click Copy
 """
 
 import sys
@@ -13,12 +14,15 @@ import os
 import time
 import json
 import uuid
+import re
 import base64
+import sqlite3
 import subprocess
 import threading
-from flask import Flask, request, jsonify, Response, send_from_directory, render_template
+from datetime import datetime, timezone, timedelta
+from flask import Flask, request, jsonify, Response, send_from_directory, send_file, render_template
 
-# Tambahkan path agy_account ke system path
+# Tambahkan path agy_account ke sys.path
 AGY_BIN_DIR = r"C:\Users\PRIMA\AppData\Local\agy\bin"
 if AGY_BIN_DIR not in sys.path:
     sys.path.append(AGY_BIN_DIR)
@@ -29,17 +33,54 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOADS_DIR = os.path.join(APP_DIR, "uploads")
 STATIC_DIR = os.path.join(APP_DIR, "static")
 TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
+SUMMARIES_DB = r"C:\Users\PRIMA\.gemini\antigravity-cli\conversation_summaries.db"
+BRAIN_DIR = r"C:\Users\PRIMA\.gemini\antigravity-cli\brain"
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
 os.makedirs(TEMPLATES_DIR, exist_ok=True)
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
-app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max upload
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max
 
-# Global state untuk mengontrol proses yang sedang berjalan
 current_process = None
 process_lock = threading.Lock()
+
+def get_db_connection():
+    if os.path.exists(SUMMARIES_DB):
+        conn = sqlite3.connect(SUMMARIES_DB, timeout=5.0)
+        conn.row_factory = sqlite3.Row
+        return conn
+    return None
+
+def format_relative_time(iso_str):
+    """Mengubah timestamp ISO ke label waktu ramah pengguna (Hari ini, Kemarin, dll)."""
+    if not iso_str:
+        return "", "Lainnya"
+    try:
+        # Bersihkan format timezone jika ada
+        clean_str = iso_str.split('+')[0].split('.')[0].strip()
+        dt = datetime.strptime(clean_str, "%Y-%m-%d %H:%M:%S")
+        
+        # Asumsikan UTC jika tidak ada timezone, konversi ke lokal WIB (+7)
+        dt_local = dt + timedelta(hours=7)
+        now_local = datetime.now()
+        
+        time_display = dt_local.strftime("%H:%M")
+        date_diff = (now_local.date() - dt_local.date()).days
+        
+        if date_diff == 0:
+            return time_display, "Hari Ini"
+        elif date_diff == 1:
+            return time_display, "Kemarin"
+        elif date_diff < 7:
+            return dt_local.strftime("%a %H:%M"), "7 Hari Terakhir"
+        elif date_diff < 30:
+            return dt_local.strftime("%d %b"), "Bulan Ini"
+        else:
+            return dt_local.strftime("%d/%m/%y"), "Lebih Lama"
+    except Exception:
+        return iso_str[:10], "Lainnya"
 
 @app.route('/')
 def index():
@@ -49,24 +90,125 @@ def index():
 def serve_upload(filename):
     return send_from_directory(UPLOADS_DIR, filename)
 
+@app.route('/api/image-preview')
+def serve_image_preview():
+    """Melayani gambar lokal dengan aman untuk ditampilkan di chat preview."""
+    file_path = request.args.get('path', '')
+    if file_path and os.path.exists(file_path):
+        ext = os.path.splitext(file_path)[1].lower()
+        if ext in ('.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg'):
+            return send_file(file_path)
+    return jsonify({'error': 'Image not found'}), 404
+
+@app.route('/api/conversations', methods=['GET'])
+def get_conversations():
+    """Mengambil daftar riwayat percakapan dari AGY CLI SQLite database."""
+    conn = get_db_connection()
+    if not conn:
+        return jsonify({'success': True, 'conversations': []})
+    
+    try:
+        cur = conn.cursor()
+        query = """
+            SELECT conversation_id, title, preview, step_count, last_modified_time, workspace_uris, project_id 
+            FROM conversation_summaries 
+            ORDER BY last_modified_time DESC 
+            LIMIT 150
+        """
+        rows = cur.execute(query).fetchall()
+        
+        conversations = []
+        for r in rows:
+            cid = r['conversation_id']
+            title = r['title'] or r['preview'] or "Percakapan Tanpa Judul"
+            time_label, group_label = format_relative_time(r['last_modified_time'])
+            
+            conversations.append({
+                'id': cid,
+                'title': title,
+                'preview': r['preview'] or '',
+                'stepCount': r['step_count'] or 0,
+                'lastModified': r['last_modified_time'],
+                'timeLabel': time_label,
+                'groupLabel': group_label,
+                'workspace': r['workspace_uris'] or ''
+            })
+            
+        conn.close()
+        return jsonify({'success': True, 'conversations': conversations})
+    except Exception as e:
+        if conn: conn.close()
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/conversations/<cid>/messages', methods=['GET'])
+def get_conversation_messages(cid):
+    """Mengekstrak seluruh pesan percakapan dari transcript.jsonl AGY."""
+    tpath = os.path.join(BRAIN_DIR, cid, ".system_generated", "logs", "transcript.jsonl")
+    if not os.path.exists(tpath):
+        return jsonify({'success': True, 'messages': []})
+    
+    messages = []
+    try:
+        with open(tpath, "r", encoding="utf-8", errors="ignore") as f:
+            for line in f:
+                if not line.strip(): continue
+                d = json.loads(line)
+                stype = d.get("type")
+                
+                if stype == "USER_INPUT":
+                    raw = d.get("content", "")
+                    m = re.search(r"<USER_REQUEST>(.*?)</USER_REQUEST>", raw, re.DOTALL)
+                    text = m.group(1).strip() if m else raw.strip()
+                    
+                    # Deteksi lampiran gambar
+                    img_matches = re.findall(r"-\s*([A-Za-z]:/[^ \r\n]+\.(?:png|jpg|jpeg|webp))", raw, re.IGNORECASE)
+                    
+                    messages.append({
+                        'role': 'user',
+                        'text': text,
+                        'images': img_matches,
+                        'timestamp': d.get("created_at")
+                    })
+                    
+                elif stype == "PLANNER_RESPONSE":
+                    content = d.get("content", "")
+                    thinking = d.get("thinking", "")
+                    tools = []
+                    for tc in d.get("tool_calls", []):
+                        if isinstance(tc, dict):
+                            func = tc.get("function", {})
+                            name = func.get("name") or tc.get("name", "tool")
+                            tools.append({
+                                'name': name,
+                                'summary': tc.get("toolSummary") or func.get("name") or name
+                            })
+                            
+                    if content or thinking or tools:
+                        messages.append({
+                            'role': 'assistant',
+                            'text': content,
+                            'thinking': thinking,
+                            'tools': tools,
+                            'timestamp': d.get("created_at")
+                        })
+                        
+        return jsonify({'success': True, 'messages': messages, 'conversationId': cid})
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/accounts', methods=['GET'])
 def get_accounts():
-    """Mengambil daftar akun Google dan akun yang sedang aktif."""
+    """Mengambil daftar akun Google dan status aktif."""
     try:
         meta = agy_account.load_metadata()
-        current_blob = agy_account.get_current_credential_blob()
-        
         accs = []
         for a in meta.get('accounts', []):
             path = os.path.join(agy_account.PROFILES_DIR, f"{a}.dat")
-            exists = os.path.exists(path)
-            is_active = (a == meta.get('active', ''))
             accs.append({
                 'name': a,
-                'active': is_active,
-                'ready': exists
+                'active': (a == meta.get('active', '')),
+                'ready': os.path.exists(path)
             })
-            
         return jsonify({
             'success': True,
             'active': meta.get('active', ''),
@@ -77,7 +219,7 @@ def get_accounts():
 
 @app.route('/api/accounts/switch', methods=['POST'])
 def switch_account():
-    """Berpindah ke akun Google tertentu."""
+    """Berpindah ke profil akun Google tertentu."""
     data = request.get_json() or {}
     name = data.get('name')
     if not name:
@@ -90,7 +232,7 @@ def switch_account():
 
 @app.route('/api/accounts/add', methods=['POST'])
 def add_account():
-    """Memicu proses penambahan akun baru (membuka browser)."""
+    """Menambah akun Google baru via browser auth."""
     data = request.get_json() or {}
     name = data.get('name', f"akun_{int(time.time())}")
     
@@ -98,11 +240,11 @@ def add_account():
         agy_account.add_new_account(name)
         
     threading.Thread(target=run_add, daemon=True).start()
-    return jsonify({'success': True, 'message': f'Proses login akun {name} telah dimulai di browser.'})
+    return jsonify({'success': True, 'message': f'Login browser akun {name} telah dipicu.'})
 
 @app.route('/api/upload', methods=['POST'])
 def upload_file():
-    """Menangani upload gambar via file picker, drag-and-drop, atau Ctrl+V (base64/binary)."""
+    """Menangani upload gambar dari file picker, drag-and-drop, atau Ctrl+V paste."""
     try:
         uploaded_files = []
         
@@ -118,7 +260,7 @@ def upload_file():
                     uploaded_files.append({
                         'fileName': f.filename,
                         'savedName': safe_name,
-                        'absolutePath': dest_path,
+                        'absolutePath': dest_path.replace('\\', '/'),
                         'url': f"/uploads/{safe_name}"
                     })
                     
@@ -127,7 +269,7 @@ def upload_file():
         if json_data and 'base64Data' in json_data:
             b64_str = json_data['base64Data']
             if ',' in b64_str:
-                header, b64_str = b64_str.split(',', 1)
+                _, b64_str = b64_str.split(',', 1)
                 
             img_bytes = base64.b64decode(b64_str)
             safe_name = f"clipboard_{int(time.time())}_{uuid.uuid4().hex[:6]}.png"
@@ -136,9 +278,9 @@ def upload_file():
                 f.write(img_bytes)
                 
             uploaded_files.append({
-                'fileName': 'Clipboard_Screenshot.png',
+                'fileName': 'Screenshot.png',
                 'savedName': safe_name,
-                'absolutePath': dest_path,
+                'absolutePath': dest_path.replace('\\', '/'),
                 'url': f"/uploads/{safe_name}"
             })
             
@@ -148,25 +290,25 @@ def upload_file():
 
 @app.route('/api/chat', methods=['POST'])
 def chat_stream():
-    """Streaming interaksi AGY CLI dengan auto-fallback Google account dan multimodal attachment."""
+    """Streaming interaksi AGY dengan auto-fallback Google account dan multimodal attachment."""
     global current_process
     
     data = request.get_json() or {}
     prompt = data.get('prompt', '').strip()
     model = data.get('model', 'gemini-3.8-flash-high')
     cwd = data.get('cwd', r"C:\Users\PRIMA")
-    images = data.get('images', [])  # list of absolute paths
-    continue_session = data.get('continueSession', False)
+    conversation_id = data.get('conversationId')
+    images = data.get('images', [])
     
     if not prompt and not images:
         return jsonify({'error': 'Prompt atau gambar diperlukan'}), 400
         
-    # Format instruksi multimodal untuk agent jika ada gambar terlampir
+    # Susun instruksi multimodal
     if images:
         image_instructions = "\n\n[LAMPIRAN GAMBAR/FOTO DARI USER]:\n"
         for idx, img_path in enumerate(images, 1):
             image_instructions += f"{idx}. File Path: {img_path}\n"
-        image_instructions += "Instruksi: Gunakan kemampuan inspeksi file / vision untuk menganalisis dan memahami konten gambar di atas dalam menyelesaikan permintaan user."
+        image_instructions += "Instruksi: Analisis dan periksa gambar di atas untuk merespons permintaan user."
         full_prompt = prompt + image_instructions
     else:
         full_prompt = prompt
@@ -175,7 +317,7 @@ def chat_stream():
         global current_process
         
         target_prompt = full_prompt
-        use_continue = continue_session
+        active_cid = conversation_id
         max_retries = 3
         retry_count = 0
         
@@ -184,11 +326,11 @@ def chat_stream():
             meta = agy_account.load_metadata()
             active_acc = meta.get('active', 'default')
             
-            yield f"data: {json.dumps({'type': 'status', 'account': active_acc, 'model': model})}\n\n"
+            yield f"data: {json.dumps({'type': 'status', 'account': active_acc, 'model': model, 'conversationId': active_cid})}\n\n"
             
             cmd = [agy_account.AGY_EXE]
-            if use_continue:
-                cmd.append("-c")
+            if active_cid:
+                cmd.extend(["--conversation", active_cid])
             cmd.extend(["-p", target_prompt, "--model", model])
             
             with process_lock:
@@ -208,7 +350,6 @@ def chat_stream():
                 if not line:
                     break
                     
-                # Cek jika terjadi error kuota
                 lower_line = line.lower()
                 for pattern in agy_account.QUOTA_ERROR_PATTERNS:
                     if pattern in lower_line:
@@ -226,13 +367,12 @@ def chat_stream():
             if is_quota_exhausted:
                 next_acc = agy_account.get_next_profile()
                 if next_acc and next_acc != active_acc:
-                    yield f"data: {json.dumps({'type': 'fallback', 'message': f'Kuota Akun [{active_acc}] habis! Otomatis beralih ke Akun [{next_acc}]...'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'fallback', 'message': f'Kuota Akun [{active_acc}] habis. Otomatis beralih ke Akun [{next_acc}]...'})}\n\n"
                     agy_account.switch_profile(next_acc, silent=True)
-                    use_continue = True # Lanjutkan sesi
                     time.sleep(1)
                     continue
                 else:
-                    yield f"data: {json.dumps({'type': 'error', 'message': 'Semua akun Google yang terdaftar telah mencapai batas kuota.'})}\n\n"
+                    yield f"data: {json.dumps({'type': 'error', 'message': 'Semua akun Google terdaftar telah mencapai batas kuota.'})}\n\n"
                     break
             else:
                 break
@@ -260,7 +400,7 @@ def run_server(port=4567):
     print(f"      GOOGLE ANTIGRAVITY WEB UI (AGY VISION HUB)       ")
     print(f"=======================================================")
     print(f" [*] Web UI URL     : http://127.0.0.1:{port}")
-    print(f" [*] Upload Folder  : {UPLOADS_DIR}")
+    print(f" [*] Summaries DB   : {SUMMARIES_DB}")
     print(f" [*] Multi-Account  : Aktif (Auto-Fallback Ready)")
     print(f" [*] Image Vision   : Aktif (Paste Ctrl+V & Drag-Drop)")
     print(f"-------------------------------------------------------\n")

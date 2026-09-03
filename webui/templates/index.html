@@ -1,271 +1,337 @@
 <!DOCTYPE html>
-<html lang="id">
+<html lang="id" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Antigravity Web UI — Vision & Multi-Account Hub</title>
+  <title>Antigravity Web UI — Executive Agent & Multi-Account Hub</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/atom-one-dark.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
 
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              800: '#1e40af',
+              900: '#1e3a8a',
+            },
+            dark: {
+              950: '#080C14',
+              900: '#0D1321',
+              850: '#11192C',
+              800: '#162035',
+              700: '#1E2C4A',
+              600: '#2B3D66',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
     
     * {
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
     }
-    code, pre {
+    code, pre, .font-mono {
       font-family: 'JetBrains Mono', monospace;
     }
-    
+
     body {
-      background: radial-gradient(circle at 50% 0%, #172A45 0%, #0B132B 100%);
+      background-color: #080C14;
       color: #E2E8F0;
-      min-height: 100vh;
     }
 
-    .glass-panel {
-      background: rgba(16, 29, 49, 0.7);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
     }
-
-    .glass-input {
-      background: rgba(11, 20, 36, 0.85);
-      border: 1px solid rgba(59, 130, 246, 0.2);
+    ::-webkit-scrollbar-track {
+      background: transparent;
     }
-    .glass-input:focus {
-      border-color: #3B82F6;
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
-      outline: none;
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 9999px;
     }
-
-    .custom-scrollbar::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.2);
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.15);
-      border-radius: 4px;
-    }
-    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    ::-webkit-scrollbar-thumb:hover {
       background: rgba(255, 255, 255, 0.25);
-    }
-
-    .chat-bubble-user {
-      background: linear-gradient(135deg, #1E40AF 0%, #2563EB 100%);
-      border: 1px solid rgba(255, 255, 255, 0.15);
-    }
-    .chat-bubble-ai {
-      background: rgba(15, 27, 45, 0.9);
-      border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     /* Markdown Styling */
     .prose pre {
-      background: #0d1522 !important;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 0.5rem;
+      background-color: #0B101B !important;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.75rem;
       padding: 1rem;
-      margin: 0.75rem 0;
-      overflow-x: auto;
+      margin: 0.85rem 0;
+      position: relative;
     }
-    .prose code {
-      color: #38BDF8;
-      font-size: 0.875rem;
+    .prose code:not(pre code) {
+      background-color: rgba(59, 130, 246, 0.12);
+      color: #60A5FA;
+      padding: 0.15rem 0.4rem;
+      border-radius: 0.35rem;
+      font-size: 0.85em;
     }
     .prose p {
       margin-bottom: 0.75rem;
-      line-height: 1.65;
+      line-height: 1.7;
+    }
+    .prose p:last-child {
+      margin-bottom: 0;
     }
     .prose ul, .prose ol {
-      margin-left: 1.5rem;
+      margin-left: 1.25rem;
       margin-bottom: 0.75rem;
     }
     .prose li {
       margin-bottom: 0.25rem;
     }
+    .prose table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+    }
+    .prose th, .prose td {
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 0.5rem 0.75rem;
+      text-align: left;
+    }
+    .prose th {
+      background: rgba(255, 255, 255, 0.05);
+      font-weight: 600;
+    }
 
-    .drag-active {
-      border: 2px dashed #3B82F6 !important;
-      background: rgba(59, 130, 246, 0.1) !important;
+    /* Smooth Transitions */
+    .sidebar-transition {
+      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     }
   </style>
 </head>
-<body class="flex flex-col h-screen overflow-hidden">
+<body class="flex h-screen overflow-hidden select-none">
 
-  <!-- Header -->
-  <header class="glass-panel z-20 px-6 py-3.5 flex items-center justify-between border-b border-slate-800/80">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
-        <i class="fa-solid fa-atom text-white text-xl"></i>
-      </div>
-      <div>
-        <div class="flex items-center gap-2">
-          <h1 class="font-bold text-lg text-white tracking-wide">Antigravity Web UI</h1>
-          <span class="text-xs px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium">Vision & Fallback</span>
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside id="sidebar" class="sidebar-transition w-80 bg-dark-900 border-r border-slate-800/80 flex flex-col z-30 shrink-0 select-none">
+    
+    <!-- Sidebar Header: Brand & New Session -->
+    <div class="p-4 border-b border-slate-800/60 space-y-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i class="fa-solid fa-atom text-base"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-sm tracking-wide text-white flex items-center gap-1.5">
+              <span>Antigravity</span>
+              <span class="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded font-semibold border border-blue-500/30">AGY</span>
+            </h1>
+            <p class="text-[10px] text-slate-400">Autonomous Agent Console</p>
+          </div>
         </div>
-        <p class="text-xs text-slate-400">Google Agentic AI • Multi-Account Resilience Hub</p>
+        <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition lg:hidden">
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+
+      <!-- Button: New Session -->
+      <button onclick="startNewSession()" class="w-full py-2.5 px-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition active:scale-[0.99]">
+        <i class="fa-solid fa-plus text-xs"></i>
+        <span>Sesi Percakapan Baru</span>
+      </button>
+
+      <!-- Search Input -->
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
+        <input type="text" id="searchInput" oninput="filterConversations(this.value)" placeholder="Cari percakapan AGY..." 
+          class="w-full bg-dark-950 border border-slate-800/90 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-300 placeholder-slate-500 focus:outline-none focus:border-brand-500/60 transition">
       </div>
     </div>
 
-    <!-- Controls / Status -->
-    <div class="flex items-center gap-3">
-      <!-- Google Account Selector -->
-      <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
-        <i class="fa-brands fa-google text-emerald-400 text-sm"></i>
-        <span class="text-xs text-slate-400 font-medium">Akun:</span>
-        <select id="accountSelect" onchange="switchAccount(this.value)" class="bg-transparent text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer">
-          <option value="" disabled selected>Memuat akun...</option>
-        </select>
-        <button onclick="openAddAccountModal()" title="Tambah Akun Google Baru" class="text-slate-400 hover:text-white text-xs pl-1">
+    <!-- Conversation List Feed -->
+    <div id="conversationFeed" class="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
+      <div class="text-center text-xs text-slate-500 py-6">Memuat riwayat sesi...</div>
+    </div>
+
+    <!-- Sidebar Footer: Google Account Status & Settings -->
+    <div class="p-3 border-t border-slate-800/60 bg-dark-950/60">
+      <div class="flex items-center justify-between p-2 rounded-xl bg-dark-850 border border-slate-800">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <i class="fa-brands fa-google text-xs"></i>
+          </div>
+          <div class="truncate">
+            <div class="text-[10px] text-slate-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>Akun Aktif:</span>
+            </div>
+            <select id="accountSelect" onchange="switchAccount(this.value)" class="bg-transparent text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer truncate max-w-[130px]">
+              <option value="" disabled selected>Memuat...</option>
+            </select>
+          </div>
+        </div>
+        <button onclick="openAddAccountModal()" title="Tambah Akun Google Baru" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition text-xs">
           <i class="fa-solid fa-plus-circle"></i>
         </button>
       </div>
-
-      <!-- Model Selector -->
-      <div class="flex items-center gap-2 bg-slate-900/80 px-3 py-1.5 rounded-xl border border-slate-700/60">
-        <i class="fa-solid fa-microchip text-blue-400 text-sm"></i>
-        <select id="modelSelect" class="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer">
-          <option value="gemini-3.8-flash-high" selected>Gemini 3.8 Flash (High)</option>
-          <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
-          <option value="gemini-3.7-flash-high">Gemini 3.7 Flash (High)</option>
-          <option value="gemini-3.1-pro-high">Gemini 3.1 Pro (High)</option>
-          <option value="gpt-oss-120b-medium">GPT-OSS 120B</option>
-        </select>
-      </div>
-
-      <!-- Clear Chat -->
-      <button onclick="clearChat()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-medium transition flex items-center gap-1.5 border border-slate-700">
-        <i class="fa-solid fa-rotate-right"></i>
-        <span>Reset Sesi</span>
-      </button>
     </div>
-  </header>
+  </aside>
 
-  <!-- Workspace Sub-bar -->
-  <div class="bg-slate-950/60 px-6 py-2 border-b border-slate-800/40 flex items-center justify-between text-xs text-slate-400">
-    <div class="flex items-center gap-2 w-2/3">
-      <i class="fa-solid fa-folder-open text-amber-400"></i>
-      <span>Working Dir:</span>
-      <input type="text" id="cwdInput" value="C:\Users\PRIMA" class="bg-slate-900/80 border border-slate-800 rounded px-2 py-0.5 text-xs text-slate-200 w-full focus:outline-none focus:border-blue-500">
-    </div>
-    <div class="flex items-center gap-3">
-      <label class="flex items-center gap-1.5 cursor-pointer text-slate-300">
-        <input type="checkbox" id="continueToggle" checked class="rounded bg-slate-900 border-slate-700 text-blue-600 focus:ring-0">
-        <span>Sambung Riwayat Sesi (-c)</span>
-      </label>
-      <span class="text-slate-600">|</span>
-      <span id="systemStatus" class="flex items-center gap-1 text-emerald-400 font-medium">
-        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-        Ready
-      </span>
-    </div>
-  </div>
+  <!-- ==================== MAIN CHAT PANEL ==================== -->
+  <div class="flex-1 flex flex-col h-screen overflow-hidden bg-dark-950">
 
-  <!-- Chat Content Feed -->
-  <main id="chatFeed" class="flex-1 overflow-y-auto px-6 py-6 custom-scrollbar space-y-6">
-    <!-- Welcome Message -->
-    <div class="chat-bubble-ai max-w-3xl mx-auto p-5 rounded-2xl shadow-xl">
-      <div class="flex items-start gap-3.5">
-        <div class="w-8 h-8 rounded-lg bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
-          <i class="fa-solid fa-robot text-sm"></i>
-        </div>
-        <div class="prose prose-invert text-sm flex-1 leading-relaxed">
-          <h3 class="text-base font-semibold text-white mb-2 flex items-center gap-2">
-            <span>Selamat datang di Antigravity Web UI</span>
-            <span class="text-xs font-normal text-slate-400 px-2 py-0.5 rounded bg-blue-500/10 border border-blue-500/20">Vision Ready</span>
-          </h3>
-          <p>Kini Anda dapat berinteraksi dengan Agent Antigravity dengan fleksibilitas penuh:</p>
-          <ul>
-            <li><strong>🖼️ Lampiran Gambar / Screenshot:</strong> Cukup tekan <kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs">Ctrl + V</kbd> setelah screenshot (<kbd class="px-1.5 py-0.5 bg-slate-800 border border-slate-700 rounded text-xs">Win + Shift + S</kbd>) atau drag-and-drop gambar langsung ke kotak chat.</li>
-            <li><strong>🔄 Auto-Fallback Google Account:</strong> Jika kuota akun aktif habis, sistem otomatis beralih ke akun Google cadangan dan menyambung pekerjaan tanpa jeda.</li>
-            <li><strong>⚡ Terminal / CLI Power:</strong> Semua tools pengeditan kode, eksekusi shell, dan eksplorasi file tetap aktif 100%.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Drag Overlay -->
-  <div id="dragOverlay" class="fixed inset-0 bg-blue-900/60 backdrop-blur-sm z-50 flex flex-col items-center justify-center border-4 border-dashed border-blue-400 hidden pointer-events-none">
-    <i class="fa-solid fa-cloud-arrow-up text-6xl text-blue-300 animate-bounce mb-4"></i>
-    <h2 class="text-2xl font-bold text-white">Lepaskan Foto / Gambar di Sini</h2>
-    <p class="text-blue-200 text-sm mt-1">Gambar akan langsung dilampirkan ke prompt Antigravity</p>
-  </div>
-
-  <!-- Bottom Input Bar -->
-  <footer class="glass-panel p-4 z-20 border-t border-slate-800/80">
-    <div class="max-w-4xl mx-auto space-y-2">
-      
-      <!-- Attachment Previews Strip -->
-      <div id="attachmentStrip" class="flex flex-wrap gap-2 empty:hidden"></div>
-
-      <!-- Input Box -->
-      <div class="glass-input rounded-2xl p-2.5 flex items-end gap-2 shadow-2xl transition">
-        <!-- Attach File Button -->
-        <button onclick="document.getElementById('fileInput').click()" title="Lampirkan Gambar/Foto" class="p-2.5 text-slate-400 hover:text-blue-400 hover:bg-slate-800/50 rounded-xl transition shrink-0">
-          <i class="fa-solid fa-image text-lg"></i>
+    <!-- Top Navigation Bar -->
+    <header class="h-14 px-5 border-b border-slate-800/80 bg-dark-900/70 backdrop-blur-md flex items-center justify-between z-20 shrink-0">
+      <div class="flex items-center gap-3 overflow-hidden">
+        <button onclick="toggleSidebar()" class="p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-bars-staggered text-sm"></i>
         </button>
-        <input type="file" id="fileInput" multiple accept="image/*,.pdf" class="hidden" onchange="handleFileSelect(this.files)">
-
-        <!-- Textarea -->
-        <textarea id="promptInput" rows="1" placeholder="Tulis instruksi atau paste gambar (Ctrl+V) / drag foto ke sini..." 
-          class="flex-1 bg-transparent text-sm text-slate-100 placeholder-slate-500 resize-none max-h-48 custom-scrollbar py-2 focus:outline-none leading-relaxed"
-          oninput="autoResizeTextarea(this)" onkeydown="handleKeyDown(event)"></textarea>
-
-        <!-- Send / Stop Button -->
-        <div class="flex items-center gap-1.5 shrink-0">
-          <button id="stopBtn" onclick="stopGeneration()" class="p-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl transition hidden shadow-lg shadow-rose-600/30" title="Hentikan Proses">
-            <i class="fa-solid fa-stop text-sm"></i>
-          </button>
-          <button id="sendBtn" onclick="sendPrompt()" class="p-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition shadow-lg shadow-blue-600/30 font-medium" title="Kirim (Enter)">
-            <i class="fa-solid fa-paper-plane text-sm"></i>
-          </button>
+        <div class="truncate">
+          <h2 id="activeSessionTitle" class="text-sm font-semibold text-white truncate max-w-md">Sesi Baru</h2>
+          <div class="flex items-center gap-2 text-[10px] text-slate-400">
+            <span id="activeSessionId" class="font-mono truncate">Menunggu prompt pertama...</span>
+          </div>
         </div>
       </div>
 
-      <!-- Quick Helper Hint -->
-      <div class="flex items-center justify-between text-[11px] text-slate-500 px-2">
-        <div class="flex items-center gap-3">
-          <span><kbd class="px-1 py-0.5 bg-slate-900 border border-slate-800 rounded">Enter</kbd> Kirim</span>
-          <span><kbd class="px-1 py-0.5 bg-slate-900 border border-slate-800 rounded">Shift + Enter</kbd> Baris baru</span>
-          <span><kbd class="px-1 py-0.5 bg-slate-900 border border-slate-800 rounded">Ctrl + V</kbd> Paste Screenshot</span>
+      <!-- Controls: Model Selector, Working Dir & Status -->
+      <div class="flex items-center gap-3 shrink-0">
+        <!-- Model Selector -->
+        <div class="flex items-center gap-1.5 bg-dark-950 px-2.5 py-1.5 rounded-xl border border-slate-800 text-xs">
+          <i class="fa-solid fa-microchip text-blue-400 text-xs"></i>
+          <select id="modelSelect" class="bg-transparent text-xs font-semibold text-slate-200 focus:outline-none cursor-pointer">
+            <option value="gemini-3.8-flash-high" selected>Gemini 3.8 Flash</option>
+            <option value="claude-sonnet-4-6">Claude Sonnet 4.6</option>
+            <option value="gemini-3.7-flash-high">Gemini 3.7 Flash</option>
+            <option value="gemini-3.1-pro-high">Gemini 3.1 Pro</option>
+            <option value="gpt-oss-120b-medium">GPT-OSS 120B</option>
+          </select>
         </div>
-        <div class="flex items-center gap-1 text-slate-400">
-          <i class="fa-solid fa-shield-halved text-emerald-400"></i>
-          <span>Auto-Fallback Quota Active</span>
+
+        <!-- Working Directory input -->
+        <div class="hidden md:flex items-center gap-1.5 bg-dark-950 px-2.5 py-1.5 rounded-xl border border-slate-800 text-xs text-slate-400 max-w-xs">
+          <i class="fa-solid fa-folder-open text-amber-400 text-xs"></i>
+          <input type="text" id="cwdInput" value="C:\Users\PRIMA" class="bg-transparent text-xs text-slate-200 w-36 truncate focus:outline-none focus:w-48 transition-all" title="Working Directory">
+        </div>
+
+        <!-- Live Status indicator -->
+        <div id="systemStatusBadge" class="flex items-center gap-1.5 text-xs text-emerald-400 font-medium px-2 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Ready</span>
         </div>
       </div>
+    </header>
+
+    <!-- Chat Messages Stream -->
+    <main id="chatFeed" class="flex-1 overflow-y-auto px-4 md:px-8 py-6 space-y-6 select-text">
+      <!-- Welcome Empty State -->
+      <div id="welcomeState" class="max-w-2xl mx-auto py-12 text-center space-y-4">
+        <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600/30 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mx-auto shadow-xl">
+          <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+        </div>
+        <h3 class="text-lg font-bold text-white">Google Antigravity Agent Console</h3>
+        <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+          Platform operasional AI untuk rekayasa perangkat lunak, automasi sistem, dan manajemen berkas. Dukungan penuh untuk lampiran gambar dan rotasi multi-akun tanpa jeda.
+        </p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2.5 max-w-lg mx-auto text-left pt-2">
+          <div onclick="setPromptExample(this)" class="p-3 bg-dark-900/60 hover:bg-dark-850 border border-slate-800 rounded-xl cursor-pointer transition">
+            <div class="text-xs font-semibold text-white">📸 Analisis Screenshot / Gambar</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Paste Ctrl+V screenshot UI untuk diinspeksi.</div>
+          </div>
+          <div onclick="setPromptExample(this)" class="p-3 bg-dark-900/60 hover:bg-dark-850 border border-slate-800 rounded-xl cursor-pointer transition">
+            <div class="text-xs font-semibold text-white">📁 Eksplorasi & Analisis Kode</div>
+            <div class="text-[11px] text-slate-400 mt-0.5">Periksa struktur file dan cari bug otomatis.</div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- Drag & Drop Fullscreen Overlay -->
+    <div id="dragOverlay" class="fixed inset-0 bg-blue-950/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center border-4 border-dashed border-blue-400 hidden pointer-events-none">
+      <i class="fa-solid fa-cloud-arrow-up text-5xl text-blue-300 animate-bounce mb-3"></i>
+      <h3 class="text-xl font-bold text-white">Lepaskan Foto / Screenshot di Sini</h3>
+      <p class="text-blue-200 text-xs mt-1">Gambar otomatis dilampirkan ke prompt Antigravity</p>
     </div>
-  </footer>
 
-  <!-- Modal Tambah Akun -->
-  <div id="addAccountModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-    <div class="glass-panel p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl border border-slate-700 space-y-4">
+    <!-- Bottom Input Dock -->
+    <footer class="p-4 bg-dark-900/80 border-t border-slate-800/80 shrink-0">
+      <div class="max-w-4xl mx-auto space-y-2.5">
+        
+        <!-- Attachment Previews Strip -->
+        <div id="attachmentStrip" class="flex flex-wrap gap-2 empty:hidden"></div>
+
+        <!-- Floating Input Container -->
+        <div class="bg-dark-850 border border-slate-800 focus-within:border-brand-500 rounded-2xl p-2.5 shadow-2xl transition flex items-end gap-2">
+          <!-- Attach Button -->
+          <button onclick="document.getElementById('fileInput').click()" title="Lampirkan Gambar/File (atau Paste Ctrl+V)" class="p-2.5 text-slate-400 hover:text-brand-500 hover:bg-slate-800/60 rounded-xl transition shrink-0">
+            <i class="fa-solid fa-paperclip text-base"></i>
+          </button>
+          <input type="file" id="fileInput" multiple accept="image/*,.pdf" class="hidden" onchange="handleFileSelect(this.files)">
+
+          <!-- Textarea -->
+          <textarea id="promptInput" rows="1" placeholder="Ketik instruksi atau paste gambar (Ctrl+V) / drag screenshot ke sini..." 
+            class="flex-1 bg-transparent text-sm text-slate-100 placeholder-slate-500 resize-none max-h-48 py-2 focus:outline-none leading-relaxed custom-scrollbar"
+            oninput="autoResize(this)" onkeydown="handleKeyDown(event)"></textarea>
+
+          <!-- Action Buttons -->
+          <div class="flex items-center gap-1.5 shrink-0">
+            <button id="stopBtn" onclick="stopGeneration()" class="p-2.5 bg-rose-600 hover:bg-rose-500 text-white rounded-xl transition hidden shadow-lg shadow-rose-600/30" title="Hentikan Proses">
+              <i class="fa-solid fa-stop text-sm"></i>
+            </button>
+            <button id="sendBtn" onclick="sendPrompt()" class="p-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl transition shadow-lg shadow-blue-600/30 font-medium" title="Kirim (Enter)">
+              <i class="fa-solid fa-arrow-up text-sm"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Input Footer Hints -->
+        <div class="flex items-center justify-between text-[11px] text-slate-500 px-2">
+          <div class="flex items-center gap-3">
+            <span><kbd class="px-1 py-0.5 bg-dark-950 border border-slate-800 rounded">Enter</kbd> Kirim</span>
+            <span><kbd class="px-1 py-0.5 bg-dark-950 border border-slate-800 rounded">Shift + Enter</kbd> Baris baru</span>
+            <span><kbd class="px-1 py-0.5 bg-dark-950 border border-slate-800 rounded">Ctrl + V</kbd> Paste Screenshot</span>
+          </div>
+          <div class="flex items-center gap-1.5 text-slate-400">
+            <i class="fa-solid fa-shield-halved text-emerald-400 text-xs"></i>
+            <span>Auto-Fallback Quota Active</span>
+          </div>
+        </div>
+
+      </div>
+    </footer>
+  </div>
+
+  <!-- Modal Tambah Akun Google -->
+  <div id="addAccountModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+    <div class="bg-dark-900 border border-slate-700 p-6 rounded-2xl max-w-md w-full mx-4 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-        <h3 class="text-base font-bold text-white flex items-center gap-2">
+        <h3 class="text-sm font-bold text-white flex items-center gap-2">
           <i class="fa-brands fa-google text-emerald-400"></i>
-          <span>Tambah Akun Google Baru</span>
+          <span>Daftarkan Akun Google Baru</span>
         </h3>
         <button onclick="closeAddAccountModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-times"></i></button>
       </div>
       <p class="text-xs text-slate-300 leading-relaxed">
-        Sistem akan membuka jendela login Google di browser Anda. Akun baru ini akan otomatis disimpan sebagai profil cadangan untuk rotasi kuota.
+        Jendela browser akan terbuka secara otomatis untuk proses login Google. Token akun baru akan diamankan secara lokal di sistem Anda sebagai profil rotasi cadangan.
       </p>
       <div>
         <label class="block text-xs font-semibold text-slate-300 mb-1">Nama Profil Akun:</label>
-        <input type="text" id="newAccountName" placeholder="Contoh: akun2, kantor, proyek" class="w-full glass-input rounded-xl px-3 py-2 text-sm text-white focus:outline-none">
+        <input type="text" id="newAccountName" placeholder="Contoh: akun2, kantor, proyek" class="w-full bg-dark-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-brand-500">
       </div>
       <div class="flex justify-end gap-2 pt-2">
         <button onclick="closeAddAccountModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs">Batal</button>
-        <button onclick="submitNewAccount()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-600/30">
+        <button onclick="submitNewAccount()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-lg shadow-blue-600/30">
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
           <span>Buka Login Google</span>
         </button>
@@ -273,12 +339,14 @@
     </div>
   </div>
 
+  <!-- ==================== APPLICATION SCRIPT ==================== -->
   <script>
+    let allConversations = [];
+    let currentConversationId = null;
     let attachedImages = [];
     let isGenerating = false;
-    let abortController = null;
 
-    // Inisialisasi marked options
+    // Marked config
     marked.setOptions({
       highlight: function(code, lang) {
         if (lang && hljs.getLanguage(lang)) {
@@ -290,11 +358,19 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      fetchConversations();
       fetchAccounts();
       setupClipboardAndDragDrop();
     });
 
-    function autoResizeTextarea(el) {
+    function toggleSidebar() {
+      const sb = document.getElementById('sidebar');
+      sb.classList.toggle('-translate-x-full');
+      sb.classList.toggle('w-0');
+      sb.classList.toggle('w-80');
+    }
+
+    function autoResize(el) {
       el.style.height = 'auto';
       el.style.height = Math.min(el.scrollHeight, 192) + 'px';
     }
@@ -306,7 +382,146 @@
       }
     }
 
-    // Ambil daftar akun
+    function setPromptExample(el) {
+      const text = el.querySelector('.font-semibold').innerText;
+      document.getElementById('promptInput').value = text + ' ';
+      document.getElementById('promptInput').focus();
+    }
+
+    // ==================== CONVERSATIONS ENGINE ====================
+    async function fetchConversations() {
+      try {
+        const res = await fetch('/api/conversations');
+        const data = await res.json();
+        if (data.success) {
+          allConversations = data.conversations;
+          renderConversations(allConversations);
+        }
+      } catch (err) {
+        console.error('Gagal memuat riwayat percakapan:', err);
+      }
+    }
+
+    function renderConversations(list) {
+      const feed = document.getElementById('conversationFeed');
+      feed.innerHTML = '';
+
+      if (!list || list.length === 0) {
+        feed.innerHTML = '<div class="text-center text-xs text-slate-500 py-8">Belum ada riwayat sesi.</div>';
+        return;
+      }
+
+      // Group by groupLabel
+      const groups = {};
+      list.forEach(c => {
+        const grp = c.groupLabel || 'Lainnya';
+        if (!groups[grp]) groups[grp] = [];
+        groups[grp].push(c);
+      });
+
+      for (const [groupName, convs] of Object.entries(groups)) {
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'text-[10px] font-bold tracking-wider text-slate-500 uppercase px-2 pt-1 mb-1';
+        groupHeader.textContent = groupName;
+        feed.appendChild(groupHeader);
+
+        convs.forEach(c => {
+          const item = document.createElement('div');
+          const isActive = (c.id === currentConversationId);
+          item.className = `p-2.5 rounded-xl cursor-pointer transition text-xs group flex items-start gap-2.5 ${
+            isActive 
+              ? 'bg-dark-800 border border-brand-500/50 shadow-md text-white' 
+              : 'hover:bg-dark-850/80 text-slate-300 border border-transparent'
+          }`;
+          item.onclick = () => selectConversation(c.id);
+
+          item.innerHTML = `
+            <i class="fa-regular fa-message text-xs mt-1 ${isActive ? 'text-brand-400' : 'text-slate-500 group-hover:text-slate-400'}"></i>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center justify-between gap-1">
+                <span class="font-semibold truncate text-xs ${isActive ? 'text-white' : 'text-slate-200'}">${escapeHtml(c.title)}</span>
+                <span class="text-[10px] text-slate-500 shrink-0">${c.timeLabel || ''}</span>
+              </div>
+              <p class="text-[11px] text-slate-400 truncate mt-0.5">${escapeHtml(c.preview || 'Sesi percakapan')}</p>
+            </div>
+          `;
+          feed.appendChild(item);
+        });
+      }
+    }
+
+    function filterConversations(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        renderConversations(allConversations);
+        return;
+      }
+      const filtered = allConversations.filter(c => 
+        (c.title && c.title.toLowerCase().includes(q)) || 
+        (c.preview && c.preview.toLowerCase().includes(q)) ||
+        (c.id && c.id.toLowerCase().includes(q))
+      );
+      renderConversations(filtered);
+    }
+
+    async function selectConversation(cid) {
+      currentConversationId = cid;
+      renderConversations(allConversations);
+
+      const conv = allConversations.find(c => c.id === cid);
+      if (conv) {
+        document.getElementById('activeSessionTitle').textContent = conv.title || 'Percakapan AGY';
+        document.getElementById('activeSessionId').textContent = `ID: ${conv.id} • ${conv.stepCount || 0} langkah`;
+      }
+
+      // Load messages
+      const feed = document.getElementById('chatFeed');
+      feed.innerHTML = '<div class="text-center text-xs text-slate-500 py-12"><i class="fa-solid fa-spinner animate-spin mr-2"></i>Memuat riwayat sesi...</div>';
+
+      try {
+        const res = await fetch(`/api/conversations/${cid}/messages`);
+        const data = await res.json();
+        feed.innerHTML = '';
+
+        if (data.success && data.messages.length > 0) {
+          data.messages.forEach(msg => {
+            if (msg.role === 'user') {
+              appendUserMessage(msg.text, msg.images, false);
+            } else {
+              appendAiMessageStatic(msg.text, msg.thinking, msg.tools);
+            }
+          });
+          scrollToBottom();
+        } else {
+          feed.innerHTML = '<div class="text-center text-xs text-slate-500 py-12">Percakapan ini belum memiliki log pesan.</div>';
+        }
+      } catch (err) {
+        feed.innerHTML = `<div class="text-center text-xs text-rose-400 py-12">Gagal memuat pesan: ${err.message}</div>`;
+      }
+    }
+
+    function startNewSession() {
+      currentConversationId = null;
+      renderConversations(allConversations);
+      document.getElementById('activeSessionTitle').textContent = 'Sesi Percakapan Baru';
+      document.getElementById('activeSessionId').textContent = 'Menunggu prompt pertama...';
+      
+      const feed = document.getElementById('chatFeed');
+      feed.innerHTML = `
+        <div id="welcomeState" class="max-w-2xl mx-auto py-12 text-center space-y-4">
+          <div class="w-14 h-14 rounded-2xl bg-gradient-to-tr from-blue-600/30 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center text-blue-400 mx-auto shadow-xl">
+            <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+          </div>
+          <h3 class="text-lg font-bold text-white">Sesi Baru Siap Digunakan</h3>
+          <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+            Ketik instruksi Anda atau lampirkan gambar dengan <kbd class="px-1.5 py-0.5 bg-dark-950 border border-slate-800 rounded text-[10px]">Ctrl + V</kbd>.
+          </p>
+        </div>
+      `;
+      document.getElementById('promptInput').focus();
+    }
+
+    // ==================== ACCOUNTS ENGINE ====================
     async function fetchAccounts() {
       try {
         const res = await fetch('/api/accounts');
@@ -322,9 +537,7 @@
             select.appendChild(opt);
           });
         }
-      } catch (err) {
-        console.error('Gagal memuat akun:', err);
-      }
+      } catch (err) {}
     }
 
     async function switchAccount(name) {
@@ -335,11 +548,9 @@
           body: JSON.stringify({ name })
         });
         const data = await res.json();
-        if (data.success) {
-          fetchAccounts();
-        }
+        if (data.success) fetchAccounts();
       } catch (err) {
-        alert('Gagal berganti akun: ' + err.message);
+        alert('Gagal beralih akun: ' + err.message);
       }
     }
 
@@ -359,16 +570,16 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ name })
         });
-        alert('Jendela login browser telah dibuka. Silakan login ke akun Google kedua Anda. Setelah selesai, akun akan otomatis terdaftar.');
+        alert('Browser login Google telah dibuka. Silakan selesaikan login. Akun otomatis disimpan sebagai cadangan rotasi.');
         setTimeout(fetchAccounts, 5000);
       } catch (err) {
-        alert('Gagal memulai login akun: ' + err.message);
+        alert('Gagal memicu login: ' + err.message);
       }
     }
 
-    // Setup Clipboard Paste & Drag-Drop
+    // ==================== CLIPBOARD & DRAG-DROP ====================
     function setupClipboardAndDragDrop() {
-      // Paste listener
+      // Paste Ctrl+V listener
       window.addEventListener('paste', async (e) => {
         const items = (e.clipboardData || e.originalEvent.clipboardData).items;
         for (let item of items) {
@@ -379,7 +590,7 @@
         }
       });
 
-      // Drag & drop
+      // Drag & Drop
       const overlay = document.getElementById('dragOverlay');
       let dragCounter = 0;
 
@@ -439,12 +650,12 @@
     function renderAttachmentPill(fileObj) {
       const strip = document.getElementById('attachmentStrip');
       const div = document.createElement('div');
-      div.className = 'flex items-center gap-2 bg-slate-900 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 shadow-md animate-fade-in';
+      div.className = 'flex items-center gap-2 bg-dark-800 border border-slate-700/80 rounded-xl px-2.5 py-1.5 text-xs text-slate-200 shadow-md';
       div.innerHTML = `
-        <img src="${fileObj.url}" class="w-7 h-7 object-cover rounded-lg border border-slate-700">
-        <span class="max-w-[150px] truncate font-mono text-[11px]">${fileObj.fileName}</span>
+        <img src="${fileObj.url}" class="w-6 h-6 object-cover rounded-lg border border-slate-700">
+        <span class="max-w-[140px] truncate font-mono text-[11px]">${fileObj.fileName}</span>
         <button onclick="removeAttachment('${fileObj.savedName}', this)" class="text-slate-400 hover:text-rose-400 ml-1">
-          <i class="fa-solid fa-xmark"></i>
+          <i class="fa-solid fa-xmark text-xs"></i>
         </button>
       `;
       strip.appendChild(div);
@@ -455,20 +666,22 @@
       btnEl.parentElement.remove();
     }
 
-    // Kirim Prompt & Chat
+    // ==================== CHAT STREAMING ENGINE ====================
     async function sendPrompt() {
       if (isGenerating) return;
       const promptInput = document.getElementById('promptInput');
       const prompt = promptInput.value.trim();
       if (!prompt && attachedImages.length === 0) return;
 
+      const welcome = document.getElementById('welcomeState');
+      if (welcome) welcome.remove();
+
       const model = document.getElementById('modelSelect').value;
       const cwd = document.getElementById('cwdInput').value.trim();
-      const continueSession = document.getElementById('continueToggle').checked;
       const imagesToSend = attachedImages.map(img => img.absolutePath);
 
-      // Render User Message ke Chat Feed
-      appendUserMessage(prompt, attachedImages);
+      // Append User message
+      appendUserMessage(prompt, attachedImages, true);
 
       // Clear input & attachments
       promptInput.value = '';
@@ -476,16 +689,16 @@
       attachedImages = [];
       document.getElementById('attachmentStrip').innerHTML = '';
 
-      // Tampilkan AI Bubble placeholder
-      const aiBubble = appendAiMessage();
+      // Append Streaming AI message placeholder
+      const aiBubble = appendAiMessageStreaming();
 
-      // UI state
+      // UI status
       isGenerating = true;
       document.getElementById('sendBtn').classList.add('hidden');
       document.getElementById('stopBtn').classList.remove('hidden');
-      document.getElementById('systemStatus').innerHTML = `
-        <span class="w-2 h-2 rounded-full bg-blue-400 animate-ping"></span>
-        Processing...
+      document.getElementById('systemStatusBadge').innerHTML = `
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-400 animate-ping"></span>
+        <span>Running Turn...</span>
       `;
 
       try {
@@ -496,7 +709,7 @@
             prompt,
             model,
             cwd,
-            continueSession,
+            conversationId: currentConversationId,
             images: imagesToSend
           })
         });
@@ -516,14 +729,18 @@
             if (line.startsWith('data: ')) {
               try {
                 const data = JSON.parse(line.substring(6));
-                if (data.type === 'chunk') {
+                
+                if (data.type === 'status' && data.conversationId) {
+                  currentConversationId = data.conversationId;
+                } else if (data.type === 'chunk') {
                   fullContent += data.text;
                   aiBubble.contentEl.innerHTML = marked.parse(fullContent);
+                  addCopyButtons(aiBubble.contentEl);
                   hljs.highlightAll();
                   scrollToBottom();
                 } else if (data.type === 'fallback') {
                   aiBubble.statusEl.innerHTML += `
-                    <div class="my-2 px-3 py-1.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2">
+                    <div class="my-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2">
                       <i class="fa-solid fa-arrows-rotate animate-spin"></i>
                       <span>${data.message}</span>
                     </div>
@@ -531,22 +748,23 @@
                   fetchAccounts();
                   scrollToBottom();
                 } else if (data.type === 'error') {
-                  aiBubble.contentEl.innerHTML += `<div class="text-rose-400 font-semibold mt-2">${data.message}</div>`;
+                  aiBubble.contentEl.innerHTML += `<div class="text-rose-400 text-xs font-semibold mt-2">${data.message}</div>`;
                 }
               } catch (e) {}
             }
           }
         }
       } catch (err) {
-        aiBubble.contentEl.innerHTML += `<div class="text-rose-400 font-semibold mt-2">Error: ${err.message}</div>`;
+        aiBubble.contentEl.innerHTML += `<div class="text-rose-400 text-xs font-semibold mt-2">Error: ${err.message}</div>`;
       } finally {
         isGenerating = false;
         document.getElementById('sendBtn').classList.remove('hidden');
         document.getElementById('stopBtn').classList.add('hidden');
-        document.getElementById('systemStatus').innerHTML = `
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          Ready
+        document.getElementById('systemStatusBadge').innerHTML = `
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Ready</span>
         `;
+        fetchConversations();
         fetchAccounts();
       }
     }
@@ -557,43 +775,45 @@
       } catch (err) {}
     }
 
-    function appendUserMessage(text, images) {
+    // ==================== MESSAGE RENDERING ====================
+    function appendUserMessage(text, images, isNew = true) {
       const feed = document.getElementById('chatFeed');
       const div = document.createElement('div');
       div.className = 'max-w-3xl ml-auto flex justify-end gap-3';
-      
+
       let imagesHtml = '';
       if (images && images.length > 0) {
         imagesHtml = `<div class="flex flex-wrap gap-2 mb-2">` + 
-          images.map(img => `<img src="${img.url}" class="max-h-48 rounded-lg border border-white/20 object-cover shadow">`).join('') +
+          images.map(img => {
+            const src = (typeof img === 'string') ? `/api/image-preview?path=${encodeURIComponent(img)}` : img.url;
+            return `<img src="${src}" class="max-h-48 rounded-xl border border-white/20 object-cover shadow">`;
+          }).join('') +
           `</div>`;
       }
 
       div.innerHTML = `
-        <div class="chat-bubble-user p-4 rounded-2xl rounded-tr-sm text-sm text-white shadow-xl max-w-[85%] leading-relaxed">
+        <div class="bg-gradient-to-r from-brand-700 to-brand-600 text-white p-3.5 rounded-2xl rounded-tr-sm text-sm shadow-xl max-w-[85%] leading-relaxed border border-blue-400/20">
           ${imagesHtml}
-          <div>${text ? text.replace(/\n/g, '<br>') : ''}</div>
+          <div>${escapeHtml(text).replace(/\n/g, '<br>')}</div>
         </div>
       `;
       feed.appendChild(div);
-      scrollToBottom();
+      if (isNew) scrollToBottom();
     }
 
-    function appendAiMessage() {
+    function appendAiMessageStreaming() {
       const feed = document.getElementById('chatFeed');
       const div = document.createElement('div');
-      div.className = 'chat-bubble-ai max-w-3xl mx-auto p-5 rounded-2xl shadow-xl w-full';
+      div.className = 'max-w-3xl mr-auto flex items-start gap-3 w-full';
 
       div.innerHTML = `
-        <div class="flex items-start gap-3.5">
-          <div class="w-8 h-8 rounded-lg bg-blue-600/30 border border-blue-500/40 flex items-center justify-center text-blue-400 shrink-0">
-            <i class="fa-solid fa-robot text-sm"></i>
-          </div>
-          <div class="flex-1 overflow-hidden">
-            <div class="status-container"></div>
-            <div class="prose prose-invert text-sm content-container leading-relaxed">
-              <span class="inline-block w-2 h-4 bg-blue-400 animate-pulse"></span>
-            </div>
+        <div class="w-8 h-8 rounded-xl bg-dark-850 border border-slate-700 flex items-center justify-center text-blue-400 shrink-0 shadow mt-0.5">
+          <i class="fa-solid fa-atom text-sm"></i>
+        </div>
+        <div class="flex-1 overflow-hidden bg-dark-900 border border-slate-800/90 rounded-2xl p-4 shadow-xl">
+          <div class="status-container"></div>
+          <div class="prose prose-invert text-sm content-container leading-relaxed">
+            <span class="inline-block w-2 h-4 bg-brand-400 animate-pulse"></span>
           </div>
         </div>
       `;
@@ -607,15 +827,59 @@
       };
     }
 
-    function clearChat() {
-      if (confirm('Mulai sesi baru? Riwayat chat di layar akan dibersihkan.')) {
-        document.getElementById('chatFeed').innerHTML = '';
+    function appendAiMessageStatic(text, thinking, tools) {
+      const feed = document.getElementById('chatFeed');
+      const div = document.createElement('div');
+      div.className = 'max-w-3xl mr-auto flex items-start gap-3 w-full';
+
+      let toolsHtml = '';
+      if (tools && tools.length > 0) {
+        toolsHtml = `<div class="flex flex-wrap gap-1.5 mb-2.5">` + 
+          tools.map(t => `<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-dark-850 border border-slate-800 rounded-md text-[10px] text-slate-400 font-mono"><i class="fa-solid fa-terminal text-[8px] text-blue-400"></i> ${escapeHtml(t.name)}</span>`).join('') +
+          `</div>`;
       }
+
+      let parsedContent = text ? marked.parse(text) : '';
+
+      div.innerHTML = `
+        <div class="w-8 h-8 rounded-xl bg-dark-850 border border-slate-700 flex items-center justify-center text-blue-400 shrink-0 shadow mt-0.5">
+          <i class="fa-solid fa-atom text-sm"></i>
+        </div>
+        <div class="flex-1 overflow-hidden bg-dark-900 border border-slate-800/90 rounded-2xl p-4 shadow-xl">
+          ${toolsHtml}
+          <div class="prose prose-invert text-sm content-container leading-relaxed">
+            ${parsedContent}
+          </div>
+        </div>
+      `;
+      feed.appendChild(div);
+      addCopyButtons(div);
+    }
+
+    function addCopyButtons(parent) {
+      parent.querySelectorAll('pre').forEach(pre => {
+        if (pre.querySelector('.copy-btn')) return;
+        const btn = document.createElement('button');
+        btn.className = 'copy-btn absolute top-2 right-2 px-2 py-1 bg-dark-800/80 hover:bg-dark-700 text-slate-400 hover:text-white rounded text-[10px] font-mono transition flex items-center gap-1 border border-slate-700';
+        btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy';
+        btn.onclick = () => {
+          const code = pre.querySelector('code')?.innerText || pre.innerText;
+          navigator.clipboard.writeText(code);
+          btn.innerHTML = '<i class="fa-solid fa-check text-emerald-400"></i> Copied!';
+          setTimeout(() => btn.innerHTML = '<i class="fa-regular fa-copy"></i> Copy', 2000);
+        };
+        pre.appendChild(btn);
+      });
     }
 
     function scrollToBottom() {
       const feed = document.getElementById('chatFeed');
       feed.scrollTop = feed.scrollHeight;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     }
   </script>
 </body>
