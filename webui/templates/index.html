@@ -763,6 +763,10 @@
                   `;
                   fetchAccounts();
                   scrollToBottom();
+                } else if (data.type === 'done') {
+                  if (data.conversationId) {
+                    currentConversationId = data.conversationId;
+                  }
                 } else if (data.type === 'error') {
                   aiBubble.contentEl.innerHTML += `<div class="text-rose-400 text-xs font-semibold mt-2">${data.message}</div>`;
                 }
@@ -780,7 +784,14 @@
           <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
           <span>Ready</span>
         `;
-        fetchConversations();
+        await fetchConversations();
+        if (currentConversationId) {
+          const conv = allConversations.find(c => c.id === currentConversationId);
+          if (conv) {
+            document.getElementById('activeSessionTitle').textContent = conv.title || 'Percakapan AGY';
+            document.getElementById('activeSessionId').textContent = `ID: ${conv.id} • ${conv.stepCount || 0} langkah`;
+          }
+        }
         fetchAccounts();
       }
     }

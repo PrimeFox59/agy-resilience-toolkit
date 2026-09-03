@@ -100,6 +100,60 @@ def serve_image_preview():
             return send_file(file_path)
     return jsonify({'error': 'Image not found'}), 404
 
+def get_latest_conversation_id():
+    """Mengembalikan conversation_id terbaru dari direktori brain."""
+    if not os.path.exists(BRAIN_DIR):
+        return None
+    try:
+        dirs = [os.path.join(BRAIN_DIR, d) for d in os.listdir(BRAIN_DIR) if os.path.isdir(os.path.join(BRAIN_DIR, d))]
+        if not dirs:
+            return None
+        dirs.sort(key=os.path.getmtime, reverse=True)
+        return os.path.basename(dirs[0])
+    except Exception:
+        return None
+
+def sync_brain_conversations(conn):
+    """Memindai folder brain dan menyelaraskan percakapan yang belum tercatat di conversation_summaries.db."""
+    if not os.path.exists(BRAIN_DIR):
+        return
+    try:
+        cur = conn.cursor()
+        known = set(r[0] for r in cur.execute("SELECT conversation_id FROM conversation_summaries").fetchall())
+        brains = [d for d in os.listdir(BRAIN_DIR) if os.path.isdir(os.path.join(BRAIN_DIR, d))]
+        
+        for cid in brains:
+            tpath = os.path.join(BRAIN_DIR, cid, ".system_generated", "logs", "transcript.jsonl")
+            if os.path.exists(tpath):
+                mtime = os.path.getmtime(tpath)
+                dt_iso = datetime.fromtimestamp(mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S.000000+00:00")
+                
+                title = ""
+                preview = ""
+                steps = 0
+                with open(tpath, "r", encoding="utf-8", errors="ignore") as f:
+                    for line in f:
+                        if not line.strip(): continue
+                        steps += 1
+                        try:
+                            d = json.loads(line)
+                            if d.get("type") == "USER_INPUT" and not preview:
+                                raw = d.get("content", "")
+                                m = re.search(r"<USER_REQUEST>(.*?)</USER_REQUEST>", raw, re.DOTALL)
+                                preview = (m.group(1).strip() if m else raw.strip())[:100]
+                                title = preview[:40]
+                        except Exception:
+                            pass
+                if preview:
+                    cur.execute("""
+                        INSERT OR REPLACE INTO conversation_summaries
+                        (conversation_id, title, preview, step_count, last_modified_time, workspace_uris, project_id, last_user_input_time, last_user_input_step_index, app_data_dir)
+                        VALUES (?, ?, ?, ?, ?, ?, 'default-cli-project', ?, 0, 'antigravity-cli')
+                    """, (cid, title, preview, steps, dt_iso, '["file:///C:/Users/PRIMA"]', dt_iso))
+        conn.commit()
+    except Exception as e:
+        print(f"Sync brain error: {e}")
+
 @app.route('/api/conversations', methods=['GET'])
 def get_conversations():
     """Mengambil daftar riwayat percakapan dari AGY CLI SQLite database."""
@@ -108,6 +162,7 @@ def get_conversations():
         return jsonify({'success': True, 'conversations': []})
     
     try:
+        sync_brain_conversations(conn)
         cur = conn.cursor()
         query = """
             SELECT conversation_id, title, preview, step_count, last_modified_time, workspace_uris, project_id 
@@ -374,10 +429,21 @@ def chat_stream():
                 else:
                     yield f"data: {json.dumps({'type': 'error', 'message': 'Semua akun Google terdaftar telah mencapai batas kuota.'})}\n\n"
                     break
-            else:
-                break
-                
-        yield f"data: {json.dumps({'type': 'done'})}\n\n"
+        # Deteksi conversation_id terbaru jika tadi None
+        final_cid = active_cid
+        if not final_cid:
+            final_cid = get_latest_conversation_id()
+            
+        if final_cid:
+            try:
+                conn = get_db_connection()
+                if conn:
+                    sync_brain_conversations(conn)
+                    conn.close()
+            except Exception:
+                pass
+
+        yield f"data: {json.dumps({'type': 'done', 'conversationId': final_cid})}\n\n"
 
     return Response(generate(), mimetype='text/event-stream')
 
