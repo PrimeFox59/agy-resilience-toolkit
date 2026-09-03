@@ -1,0 +1,27 @@
+# Security & Credential Protection
+*.dat
+*.token
+*.key
+*.pem
+metadata.json
+account_profiles/
+credentials/
+
+# System & OS Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+
+# Temporary & Log files
+*.log
+*.tmp
+temp/
+__pycache__/
+*.py[cod]
+
+# Node / Environment
+node_modules/
+.env
+.env.local
