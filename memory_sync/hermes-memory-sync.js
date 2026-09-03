@@ -11,7 +11,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { execFile } = require('child_process');
 
-const LOCAL_DIR = process.env.USERPROFILE || 'C:\\Users\\PRIMA';
+const LOCAL_DIR = process.env.USERPROFILE || require('os').homedir();
 const REMOTE_USER = 'Prime-Projectx';
 const REMOTE_HOST = '103.31.205.218';
 const REMOTE_DIR = '/home/Prime-Projectx';

@@ -1,2 +1,3 @@
 Set WshShell = CreateObject("WScript.Shell")
-WshShell.Run "node C:\Users\PRIMA\scripts\hermes-memory-sync.js", 0, False
+userProfile = WshShell.ExpandEnvironmentStrings("%USERPROFILE%")
+WshShell.Run "node """ & userProfile & "\scripts\hermes-memory-sync.js""", 0, False

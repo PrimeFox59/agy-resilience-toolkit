@@ -22,8 +22,11 @@ import threading
 from datetime import datetime, timezone, timedelta
 from flask import Flask, request, jsonify, Response, send_from_directory, send_file, render_template
 
+USER_HOME = os.environ.get("USERPROFILE") or os.path.expanduser("~")
+LOCAL_APP_DATA = os.environ.get("LOCALAPPDATA") or os.path.join(USER_HOME, "AppData", "Local")
+
 # Tambahkan path agy_account ke sys.path
-AGY_BIN_DIR = r"C:\Users\PRIMA\AppData\Local\agy\bin"
+AGY_BIN_DIR = os.path.join(LOCAL_APP_DATA, "agy", "bin")
 if AGY_BIN_DIR not in sys.path:
     sys.path.append(AGY_BIN_DIR)
 
@@ -33,8 +36,8 @@ APP_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOADS_DIR = os.path.join(APP_DIR, "uploads")
 STATIC_DIR = os.path.join(APP_DIR, "static")
 TEMPLATES_DIR = os.path.join(APP_DIR, "templates")
-SUMMARIES_DB = r"C:\Users\PRIMA\.gemini\antigravity-cli\conversation_summaries.db"
-BRAIN_DIR = r"C:\Users\PRIMA\.gemini\antigravity-cli\brain"
+SUMMARIES_DB = os.path.join(USER_HOME, ".gemini", "antigravity-cli", "conversation_summaries.db")
+BRAIN_DIR = os.path.join(USER_HOME, ".gemini", "antigravity-cli", "brain")
 
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 os.makedirs(STATIC_DIR, exist_ok=True)
@@ -86,7 +89,7 @@ def format_relative_time(iso_str):
 
 @app.route('/')
 def index():
-    resp = Flask.make_response(app, render_template('index.html'))
+    resp = Flask.make_response(app, render_template('index.html', default_cwd=USER_HOME))
     resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
     resp.headers['Pragma'] = 'no-cache'
     resp.headers['Expires'] = '0'
@@ -155,7 +158,7 @@ def sync_brain_conversations(conn):
                         INSERT OR REPLACE INTO conversation_summaries
                         (conversation_id, title, preview, step_count, last_modified_time, workspace_uris, project_id, last_user_input_time, last_user_input_step_index, app_data_dir)
                         VALUES (?, ?, ?, ?, ?, ?, 'default-cli-project', ?, 0, 'antigravity-cli')
-                    """, (cid, title, preview, steps, dt_iso, '["file:///C:/Users/PRIMA"]', dt_iso))
+                    """, (cid, title, preview, steps, dt_iso, json.dumps([f"file:///{USER_HOME.replace(chr(92), '/')}"]), dt_iso))
         conn.commit()
     except Exception as e:
         print(f"Sync brain error: {e}")
@@ -191,7 +194,7 @@ def sync_single_conversation(conn, cid):
                     INSERT OR REPLACE INTO conversation_summaries
                     (conversation_id, title, preview, step_count, last_modified_time, workspace_uris, project_id, last_user_input_time, last_user_input_step_index, app_data_dir)
                     VALUES (?, ?, ?, ?, ?, ?, 'default-cli-project', ?, 0, 'antigravity-cli')
-                """, (cid, title, preview, steps, dt_iso, '["file:///C:/Users/PRIMA"]', dt_iso))
+                """, (cid, title, preview, steps, dt_iso, json.dumps([f"file:///{USER_HOME.replace(chr(92), '/')}"]), dt_iso))
                 conn.commit()
     except Exception as e:
         print(f"Sync single conversation error: {e}")
@@ -491,7 +494,7 @@ def chat_stream():
     data = request.get_json() or {}
     prompt = data.get('prompt', '').strip()
     model = data.get('model', 'gemini-3.8-flash-high')
-    cwd = data.get('cwd', r"C:\Users\PRIMA")
+    cwd = data.get('cwd', USER_HOME)
     conversation_id = data.get('conversationId')
     images = data.get('images', [])
     
@@ -534,7 +537,7 @@ def chat_stream():
             with process_lock:
                 current_process = subprocess.Popen(
                     cmd,
-                    cwd=cwd if os.path.isdir(cwd) else r"C:\Users\PRIMA",
+                    cwd=cwd if (cwd and os.path.isdir(cwd)) else USER_HOME,
                     stdout=subprocess.PIPE,
                     stderr=subprocess.STDOUT,
                     text=True,

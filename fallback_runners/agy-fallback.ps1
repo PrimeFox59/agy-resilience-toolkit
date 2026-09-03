@@ -12,7 +12,7 @@
 
 $Arguments = $args
 
-$AGY_EXE = "C:\Users\PRIMA\AppData\Local\agy\bin\agy.exe"
+$AGY_EXE = "$env:LOCALAPPDATA\agy\bin\agy.exe"
 if (-not (Test-Path $AGY_EXE)) {
     $found = Get-Command agy.exe -ErrorAction SilentlyContinue
     if ($found) { $AGY_EXE = $found.Source }

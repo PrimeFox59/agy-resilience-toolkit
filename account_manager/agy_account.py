@@ -12,9 +12,17 @@ import subprocess
 import time
 from ctypes import wintypes
 
-PROFILES_DIR = r"C:\Users\PRIMA\.gemini\account_profiles"
+USER_HOME = os.environ.get("USERPROFILE") or os.path.expanduser("~")
+LOCAL_APP_DATA = os.environ.get("LOCALAPPDATA") or os.path.join(USER_HOME, "AppData", "Local")
+
+PROFILES_DIR = os.path.join(USER_HOME, ".gemini", "account_profiles")
 META_FILE = os.path.join(PROFILES_DIR, "metadata.json")
-AGY_EXE = r"C:\Users\PRIMA\AppData\Local\agy\bin\agy.exe"
+AGY_EXE = os.path.join(LOCAL_APP_DATA, "agy", "bin", "agy.exe")
+if not os.path.exists(AGY_EXE):
+    import shutil
+    found_agy = shutil.which("agy.exe") or shutil.which("agy")
+    if found_agy:
+        AGY_EXE = found_agy
 
 QUOTA_ERROR_PATTERNS = [
     "individual quota reached",
