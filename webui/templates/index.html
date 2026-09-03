@@ -112,96 +112,90 @@
     .prose th {
       background: rgba(255, 255, 255, 0.05);
       font-weight: 600;
-    /* Smooth Transitions & Sidebar Collapsing */
+    }
+
+    /* Smooth Sidebar Slide & Full Viewport Flex Constraint */
     #sidebar {
       width: 20rem;
       min-width: 20rem;
-      transition: width 0.28s cubic-bezier(0.4, 0, 0.2, 1), min-width 0.28s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease;
-      overflow: hidden !important;
-    }
-    #sidebar.sidebar-collapsed {
-      width: 0 !important;
-      min-width: 0 !important;
-      max-width: 0 !important;
-      border-right: none !important;
-      opacity: 0 !important;
-      pointer-events: none !important;
-      visibility: hidden;
-    }
-    .sidebar-inner {
-      width: 20rem;
-      height: 100%;
+      max-width: 20rem;
+      height: 100vh;
+      max-height: 100vh;
       display: flex;
       flex-direction: column;
       flex-shrink: 0;
+      transition: margin-left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden !important;
+      position: relative;
+    }
+    #sidebar.sidebar-collapsed {
+      margin-left: -20rem !important;
     }
   </style>
 </head>
-<body class="flex h-screen overflow-hidden select-none">
+<body class="flex h-screen overflow-hidden bg-dark-950 text-slate-200">
 
   <!-- ==================== SIDEBAR ==================== -->
-  <aside id="sidebar" class="bg-dark-900 border-r border-slate-800/80 z-30 shrink-0 select-none">
-    <div class="sidebar-inner">
-      <!-- Sidebar Header: Brand & New Session -->
-      <div class="p-4 border-b border-slate-800/60 space-y-3 shrink-0">
-        <div class="flex items-center justify-between">
-          <div class="flex items-center gap-2.5">
-            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-              <i class="fa-solid fa-atom text-base"></i>
-            </div>
-            <div>
-              <h1 class="font-bold text-sm tracking-wide text-white flex items-center gap-1.5">
-                <span>Antigravity</span>
-                <span class="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded font-semibold border border-blue-500/30">AGY</span>
-              </h1>
-              <p class="text-[10px] text-slate-400">Autonomous Agent Console</p>
-            </div>
+  <aside id="sidebar" class="bg-dark-900 border-r border-slate-800/80 z-30 shrink-0">
+    <!-- Sidebar Header: Brand & New Session -->
+    <div class="p-4 border-b border-slate-800/60 space-y-3 shrink-0 select-none">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+            <i class="fa-solid fa-atom text-base"></i>
           </div>
-          <button onclick="toggleSidebar()" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
-            <i class="fa-solid fa-chevron-left text-xs"></i>
-          </button>
+          <div>
+            <h1 class="font-bold text-sm tracking-wide text-white flex items-center gap-1.5">
+              <span>Antigravity</span>
+              <span class="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded font-semibold border border-blue-500/30">AGY</span>
+            </h1>
+            <p class="text-[10px] text-slate-400">Autonomous Agent Console</p>
+          </div>
         </div>
-
-        <!-- Button: New Session -->
-        <button onclick="startNewSession()" class="w-full py-2.5 px-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition active:scale-[0.99]">
-          <i class="fa-solid fa-plus text-xs"></i>
-          <span>Sesi Percakapan Baru</span>
+        <button onclick="toggleSidebar()" title="Sembunyikan Sidebar" class="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-800 transition">
+          <i class="fa-solid fa-chevron-left text-xs"></i>
         </button>
-
-        <!-- Search Input -->
-        <div class="relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
-          <input type="text" id="searchInput" oninput="filterConversations(this.value)" placeholder="Cari percakapan AGY..." 
-            class="w-full bg-dark-950 border border-slate-800/90 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-300 placeholder-slate-500 focus:outline-none focus:border-brand-500/60 transition">
-        </div>
       </div>
 
-      <!-- Conversation List Feed -->
-      <div id="conversationFeed" class="flex-1 overflow-y-auto px-2.5 py-3 space-y-4">
-        <div class="text-center text-xs text-slate-500 py-6">Memuat riwayat sesi...</div>
-      </div>
+      <!-- Button: New Session -->
+      <button onclick="startNewSession()" class="w-full py-2.5 px-3.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition active:scale-[0.99]">
+        <i class="fa-solid fa-plus text-xs"></i>
+        <span>Sesi Percakapan Baru</span>
+      </button>
 
-      <!-- Sidebar Footer: Google Account Status & Settings -->
-      <div class="p-3 border-t border-slate-800/60 bg-dark-950/60 shrink-0">
-        <div class="flex items-center justify-between p-2 rounded-xl bg-dark-850 border border-slate-800">
-          <div class="flex items-center gap-2 overflow-hidden">
-            <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
-              <i class="fa-brands fa-google text-xs"></i>
-            </div>
-            <div class="truncate">
-              <div class="text-[10px] text-slate-400 flex items-center gap-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>Akun Aktif:</span>
-              </div>
-              <select id="accountSelect" onchange="switchAccount(this.value)" class="bg-transparent text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer truncate max-w-[130px]">
-                <option value="" disabled selected>Memuat...</option>
-              </select>
-            </div>
+      <!-- Search Input -->
+      <div class="relative">
+        <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-slate-500"></i>
+        <input type="text" id="searchInput" oninput="filterConversations(this.value)" placeholder="Cari percakapan AGY..." 
+          class="w-full bg-dark-950 border border-slate-800/90 rounded-xl pl-8 pr-3 py-1.5 text-xs text-slate-300 placeholder-slate-500 focus:outline-none focus:border-brand-500/60 transition">
+      </div>
+    </div>
+
+    <!-- Conversation List Feed (Strictly bounded and scrolls up/down) -->
+    <div id="conversationFeed" class="flex-1 min-h-0 overflow-y-auto px-2.5 py-3 space-y-4 select-none">
+      <div class="text-center text-xs text-slate-500 py-6">Memuat riwayat sesi...</div>
+    </div>
+
+    <!-- Sidebar Footer: Google Account Status & Settings -->
+    <div class="p-3 border-t border-slate-800/60 bg-dark-950/60 shrink-0 select-none">
+      <div class="flex items-center justify-between p-2 rounded-xl bg-dark-850 border border-slate-800">
+        <div class="flex items-center gap-2 overflow-hidden">
+          <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shrink-0">
+            <i class="fa-brands fa-google text-xs"></i>
           </div>
-          <button onclick="openAddAccountModal()" title="Tambah Akun Google Baru" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition text-xs">
-            <i class="fa-solid fa-plus-circle"></i>
-          </button>
+          <div class="truncate">
+            <div class="text-[10px] text-slate-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              <span>Akun Aktif:</span>
+            </div>
+            <select id="accountSelect" onchange="switchAccount(this.value)" class="bg-transparent text-xs font-semibold text-emerald-300 focus:outline-none cursor-pointer truncate max-w-[130px]">
+              <option value="" disabled selected>Memuat...</option>
+            </select>
+          </div>
         </div>
+        <button onclick="openAddAccountModal()" title="Tambah Akun Google Baru" class="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition text-xs">
+          <i class="fa-solid fa-plus-circle"></i>
+        </button>
       </div>
     </div>
   </aside>
@@ -376,14 +370,27 @@
     });
 
     document.addEventListener('DOMContentLoaded', () => {
+      if (localStorage.getItem('sidebar_collapsed') === '1') {
+        document.getElementById('sidebar')?.classList.add('sidebar-collapsed');
+      }
       fetchConversations();
       fetchAccounts();
       setupClipboardAndDragDrop();
+
+      window.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+          e.preventDefault();
+          toggleSidebar();
+        }
+      });
     });
 
     function toggleSidebar() {
       const sb = document.getElementById('sidebar');
-      sb.classList.toggle('sidebar-collapsed');
+      if (sb) {
+        sb.classList.toggle('sidebar-collapsed');
+        localStorage.setItem('sidebar_collapsed', sb.classList.contains('sidebar-collapsed') ? '1' : '0');
+      }
     }
 
     function autoResize(el) {
