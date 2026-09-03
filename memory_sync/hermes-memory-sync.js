@@ -15,7 +15,19 @@ const LOCAL_DIR = process.env.USERPROFILE || require('os').homedir();
 const REMOTE_USER = 'Prime-Projectx';
 const REMOTE_HOST = '103.31.205.218';
 const REMOTE_DIR = '/home/Prime-Projectx';
-const KEY_PATH = path.join(LOCAL_DIR, '.ssh', 'primeprojectx16.pem');
+function resolveKeyPath() {
+  const candidates = [
+    path.join(LOCAL_DIR, '.ssh', 'primeprojectx16.pem'),
+    'D:\\0 Pre Deploy\\vps\\primeprojectx16.pem',
+    path.join(LOCAL_DIR, 'Documents', 'VPS', 'primeprojectx16.pem'),
+    path.join(LOCAL_DIR, '.vps-10g-gateway', 'primeprojectx16.pem')
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) return c;
+  }
+  return path.join(LOCAL_DIR, '.ssh', 'primeprojectx16.pem');
+}
+const KEY_PATH = resolveKeyPath();
 const SYNCED_FILES = ['USER.md', 'MEMORY.md', 'AGENTS.md'];
 const STATE_FILE = path.join(LOCAL_DIR, '.hermes-sync-state.json');
 

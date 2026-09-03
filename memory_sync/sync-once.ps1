@@ -8,7 +8,14 @@ $LocalDir = $env:USERPROFILE
 $RemoteUser = "Prime-Projectx"
 $RemoteHost = "103.31.205.218"
 $RemoteDir = "/home/Prime-Projectx"
-$KeyPath = Join-Path $LocalDir ".ssh\primeprojectx16.pem"
+$KeyCandidates = @(
+    (Join-Path $LocalDir ".ssh\primeprojectx16.pem"),
+    "D:\0 Pre Deploy\vps\primeprojectx16.pem",
+    (Join-Path $LocalDir "Documents\VPS\primeprojectx16.pem"),
+    (Join-Path $LocalDir ".vps-10g-gateway\primeprojectx16.pem")
+)
+$KeyPath = $KeyCandidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+if (-not $KeyPath) { $KeyPath = Join-Path $LocalDir ".ssh\primeprojectx16.pem" }
 $Files = @("USER.md", "MEMORY.md", "AGENTS.md")
 
 Write-Host "=== Hermes Memory Sync ($Action) ===" -ForegroundColor Cyan
