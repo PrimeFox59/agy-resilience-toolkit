@@ -898,6 +898,18 @@
         const reader = response.body.getReader();
         const decoder = new TextDecoder('utf-8');
         let fullContent = '';
+        let renderPending = false;
+
+        const scheduleRender = () => {
+          if (!renderPending) {
+            renderPending = true;
+            requestAnimationFrame(() => {
+              aiBubble.contentEl.innerHTML = marked.parse(fullContent);
+              scrollToBottom();
+              renderPending = false;
+            });
+          }
+        };
 
         while (true) {
           const { done, value } = await reader.read();
@@ -915,10 +927,7 @@
                   currentConversationId = data.conversationId;
                 } else if (data.type === 'chunk') {
                   fullContent += data.text;
-                  aiBubble.contentEl.innerHTML = marked.parse(fullContent);
-                  addCopyButtons(aiBubble.contentEl);
-                  hljs.highlightAll();
-                  scrollToBottom();
+                  scheduleRender();
                 } else if (data.type === 'fallback') {
                   aiBubble.statusEl.innerHTML += `
                     <div class="my-2 px-3 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs text-amber-300 flex items-center gap-2">
@@ -932,6 +941,11 @@
                   if (data.conversationId) {
                     currentConversationId = data.conversationId;
                   }
+                  // Render final lengkap + syntax highlight + copy buttons sekali saja
+                  aiBubble.contentEl.innerHTML = marked.parse(fullContent);
+                  addCopyButtons(aiBubble.contentEl);
+                  hljs.highlightAll();
+                  scrollToBottom();
                 } else if (data.type === 'error') {
                   aiBubble.contentEl.innerHTML += `<div class="text-rose-400 text-xs font-semibold mt-2">${data.message}</div>`;
                 }
@@ -942,6 +956,12 @@
       } catch (err) {
         aiBubble.contentEl.innerHTML += `<div class="text-rose-400 text-xs font-semibold mt-2">Error: ${err.message}</div>`;
       } finally {
+        if (fullContent) {
+          aiBubble.contentEl.innerHTML = marked.parse(fullContent);
+          addCopyButtons(aiBubble.contentEl);
+          hljs.highlightAll();
+          scrollToBottom();
+        }
         isGenerating = false;
         document.getElementById('sendBtn').classList.remove('hidden');
         document.getElementById('stopBtn').classList.add('hidden');

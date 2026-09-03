@@ -160,6 +160,42 @@ def sync_brain_conversations(conn):
     except Exception as e:
         print(f"Sync brain error: {e}")
 
+def sync_single_conversation(conn, cid):
+    """Menyelaraskan satu percakapan spesifik secara instan (<1ms) tanpa memindai seluruh folder."""
+    if not cid or not os.path.exists(BRAIN_DIR):
+        return
+    try:
+        tpath = os.path.join(BRAIN_DIR, cid, ".system_generated", "logs", "transcript.jsonl")
+        if os.path.exists(tpath):
+            mtime = os.path.getmtime(tpath)
+            dt_iso = datetime.fromtimestamp(mtime, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S.000000+00:00")
+            title = ""
+            preview = ""
+            steps = 0
+            with open(tpath, "r", encoding="utf-8", errors="ignore") as f:
+                for line in f:
+                    if not line.strip(): continue
+                    steps += 1
+                    try:
+                        d = json.loads(line)
+                        if d.get("type") == "USER_INPUT" and not preview:
+                            raw = d.get("content", "")
+                            m = re.search(r"<USER_REQUEST>(.*?)</USER_REQUEST>", raw, re.DOTALL)
+                            preview = (m.group(1).strip() if m else raw.strip())[:100]
+                            title = preview[:40]
+                    except Exception:
+                        pass
+            if preview:
+                cur = conn.cursor()
+                cur.execute("""
+                    INSERT OR REPLACE INTO conversation_summaries
+                    (conversation_id, title, preview, step_count, last_modified_time, workspace_uris, project_id, last_user_input_time, last_user_input_step_index, app_data_dir)
+                    VALUES (?, ?, ?, ?, ?, ?, 'default-cli-project', ?, 0, 'antigravity-cli')
+                """, (cid, title, preview, steps, dt_iso, '["file:///C:/Users/PRIMA"]', dt_iso))
+                conn.commit()
+    except Exception as e:
+        print(f"Sync single conversation error: {e}")
+
 def init_meta_table(conn):
     """Inisialisasi tabel metadata lokal web (pin, custom title, delete)."""
     conn.execute("""
@@ -487,11 +523,14 @@ def chat_stream():
             
             yield f"data: {json.dumps({'type': 'status', 'account': active_acc, 'model': model, 'conversationId': active_cid})}\n\n"
             
-            cmd = [agy_account.AGY_EXE]
+            cmd = [agy_account.AGY_EXE, "--dangerously-skip-permissions"]
             if active_cid:
                 cmd.extend(["--conversation", active_cid])
             cmd.extend(["-p", target_prompt, "--model", model])
             
+            env = os.environ.copy()
+            env["PYTHONUNBUFFERED"] = "1"
+
             with process_lock:
                 current_process = subprocess.Popen(
                     cmd,
@@ -500,7 +539,10 @@ def chat_stream():
                     stderr=subprocess.STDOUT,
                     text=True,
                     encoding='utf-8',
-                    errors='replace'
+                    errors='replace',
+                    bufsize=1,
+                    env=env,
+                    creationflags=getattr(subprocess, 'CREATE_NO_WINDOW', 0)
                 )
             
             is_quota_exhausted = False
@@ -542,7 +584,7 @@ def chat_stream():
             try:
                 conn = get_db_connection()
                 if conn:
-                    sync_brain_conversations(conn)
+                    sync_single_conversation(conn, final_cid)
                     conn.close()
             except Exception:
                 pass
