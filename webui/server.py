@@ -42,6 +42,8 @@ os.makedirs(TEMPLATES_DIR, exist_ok=True)
 
 app = Flask(__name__, template_folder=TEMPLATES_DIR, static_folder=STATIC_DIR)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB max
+app.config['TEMPLATES_AUTO_RELOAD'] = True
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
 
 current_process = None
 process_lock = threading.Lock()
@@ -84,7 +86,11 @@ def format_relative_time(iso_str):
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    resp = Flask.make_response(app, render_template('index.html'))
+    resp.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate, max-age=0'
+    resp.headers['Pragma'] = 'no-cache'
+    resp.headers['Expires'] = '0'
+    return resp
 
 @app.route('/uploads/<path:filename>')
 def serve_upload(filename):
